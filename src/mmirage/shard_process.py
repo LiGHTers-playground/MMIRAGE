@@ -381,8 +381,14 @@ def main():
                     num_gpus = int(tp)
                     break
 
+            # Datasets that produced 0 rows were replaced by None and never saved.
+            rows_written = sum(
+                _count_rows(ds) for ds in ds_processed_all if ds is not None
+            )
+
             stats = ShardStats(
                 rows_processed=shard_rows,
+                rows_written=rows_written,
                 gpu_util_mean=gpu_info["mean"],
                 gpu_util_min=gpu_info["min"],
                 gpu_util_max=gpu_info["max"],
