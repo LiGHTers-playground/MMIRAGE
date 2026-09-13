@@ -23,6 +23,9 @@ class FilterResult:
     """Outcome of applying a filter step to a batch of variable environments."""
 
     kept: List[VariableEnvironment] = field(default_factory=list)
+    # Positions of the kept rows within the sequence handed to `apply`, so a
+    # caller tracking row provenance can filter its own list the same way.
+    kept_positions: List[int] = field(default_factory=list)
     n_filtered: int = 0
     n_errored: int = 0
     # Row position within the batch and the exception, for the first row whose
@@ -98,6 +101,7 @@ class FilterStep(OutputVar):
                 continue
             if keep:
                 result.kept.append(env_)
+                result.kept_positions.append(position)
             else:
                 result.n_filtered += 1
         return result

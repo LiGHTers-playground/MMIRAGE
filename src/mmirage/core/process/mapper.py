@@ -1,7 +1,7 @@
 """Mapper for orchestrating variable transformations."""
 
 import logging
-from typing import Any, Dict, List, Optional, Set, cast
+from typing import Any, Dict, List, Optional, Set, Tuple, cast
 
 from mmirage.core.process.base import (
     AutoProcessor,
@@ -102,7 +102,7 @@ class MMIRAGEMapper:
         self,
         batch: Dict[str, List[Any]],
         image_base_path: Optional[str] = None,
-    ) -> List[VariableEnvironment]:
+    ) -> Tuple[List[VariableEnvironment], List[int]]:
         """Transform a batch of samples by computing output variables.
 
         Args:
@@ -110,8 +110,11 @@ class MMIRAGEMapper:
             image_base_path: Optional base directory for resolving relative image paths.
 
         Returns:
-            List of VariableEnvironments with all output variables computed.
-            Rows rejected by a filter step are absent from the list.
+            The VariableEnvironments with all output variables computed, and the
+            position within this batch of the row each one came from. Rows
+            rejected by a filter step are absent from both lists, so a caller
+            that knows the batch's dataset indices can recover which rows
+            survived without the environments carrying their own position.
 
         Raises:
             RuntimeError: If an output variable type has no registered processor.
@@ -119,6 +122,7 @@ class MMIRAGEMapper:
         batch_environment = VariableEnvironment.from_batch_input_variables(
             batch, self.input_vars, image_base_path
         )
+        positions = list(range(len(batch_environment)))
 
         for idx, output_var in enumerate(self.output_vars):
             # Every row was filtered out: nothing left for the later steps.
@@ -140,6 +144,7 @@ class MMIRAGEMapper:
                         "further errors from this step are not logged."
                     )
                 batch_environment = result.kept
+                positions = [positions[p] for p in result.kept_positions]
                 continue
 
             if output_var.type not in self.processors:
@@ -152,7 +157,7 @@ class MMIRAGEMapper:
                 batch_environment, output_var
             )
 
-        return batch_environment
+        return batch_environment, positions
 
     def total_rows_filtered(self) -> int:
         """Rows rejected by a filter predicate, summed over all filter steps."""

@@ -87,7 +87,7 @@ def test_integration_batch_pipeline_with_stateful_accumulator(monkeypatch, tmp_p
     dataset = load_dataset("json", data_files=str(data_path), split="train")
 
     def rewrite_batch(batch, mapper, renderer):
-        envs = mapper.rewrite_batch(batch)
+        envs, _positions = mapper.rewrite_batch(batch)
         return renderer.batch_render(envs)
 
     ds_out = dataset.map(
