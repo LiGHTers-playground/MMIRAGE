@@ -113,6 +113,7 @@ def test_map_yielding_zero_rows_writes_no_output_folder(tmp_path, monkeypatch):
         status = json.load(f)
     assert status["status"] == "success"
     assert status["stats"]["rows_processed"] == 2
+    assert status["stats"]["rows_written"] == 0
     assert not (tmp_path / "output" / "shard_0").exists()
 
 
@@ -142,6 +143,8 @@ def test_dataset_dict_splits_with_different_columns_are_removed_per_split(
     with open(tmp_path / "state" / "shard_0" / "status.json") as f:
         status = json.load(f)
     assert status["status"] == "success"
+    assert status["stats"]["rows_processed"] == 3
+    assert status["stats"]["rows_written"] == 3
 
     saved = load_from_disk(str(tmp_path / "output" / "shard_0"))
     assert isinstance(saved, DatasetDict)

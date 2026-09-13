@@ -38,8 +38,12 @@ class ShardStats:
     runtime_seconds: Optional[float] = None
     # rows_processed: input rows in this shard (drives throughput).
     # rows_written: output rows saved to disk; 0 means no shard_* folder was written.
+    # rows_filtered: input rows intentionally dropped by a processor.
+    # rows_dropped_by_error: input rows lost to processor errors.
     rows_processed: Optional[int] = None
     rows_written: Optional[int] = None
+    rows_filtered: Optional[int] = None
+    rows_dropped_by_error: Optional[int] = None
     throughput_rows_per_sec: Optional[float] = None
     gpu_util_mean: Optional[float] = None
     gpu_util_min: Optional[float] = None
@@ -76,6 +80,8 @@ class ShardStats:
             runtime_seconds=_opt_float(data.get("runtime_seconds")),
             rows_processed=_opt_int(data.get("rows_processed")),
             rows_written=_opt_int(data.get("rows_written")),
+            rows_filtered=_opt_int(data.get("rows_filtered")),
+            rows_dropped_by_error=_opt_int(data.get("rows_dropped_by_error")),
             throughput_rows_per_sec=_opt_float(data.get("throughput_rows_per_sec")),
             gpu_util_mean=_opt_float(data.get("gpu_util_mean")),
             gpu_util_min=_opt_float(data.get("gpu_util_min")),
@@ -129,6 +135,8 @@ class ShardStats:
             else None,
             "rows_processed": self.rows_processed,
             "rows_written": self.rows_written,
+            "rows_filtered": self.rows_filtered,
+            "rows_dropped_by_error": self.rows_dropped_by_error,
             "throughput_rows_per_sec": self.throughput_rows_per_sec,
             "gpu_util_mean": self.gpu_util_mean,
             "gpu_util_min": self.gpu_util_min,
