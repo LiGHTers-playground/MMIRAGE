@@ -68,6 +68,12 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
             raise ValueError(
                 "export_prompts_dir is set but empty; give it a path or leave it unset"
             )
+        # A real submission needs a receipt for `mmirage merge`; a prompt export does not.
+        if export_prompts_dir is None and not provider_cfg.metadata_output_path:
+            raise ValueError(
+                "metadata_output_path is required to submit batches; set it in the "
+                "provider config or export prompts instead with --export-prompts"
+            )
 
         self._batch_provider_config = provider_cfg
         self._export_prompts_dir = export_prompts_dir
