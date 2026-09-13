@@ -1,0 +1,41 @@
+processors:
+  - type: custom
+    script_path: "./tests/mock_script/mock_script.py"
+    function_name: "score_text"
+    max_workers: 4
+    start_method: "spawn"
+    timeout_ms: 2000 # by sample
+    max_timeouts: 5
+    max_errors: 1
+    fallback_value: 0.0 # a row that fails to score is filtered out below
+
+loading_params:
+  num_shards: 1
+  batch_size: 500
+  datasets:
+    - type: JSONL
+      path: "./tests/mock_data/data.jsonl"
+      output_dir: "./tests/output/data_mock_filter"
+
+execution_params:
+  mode: local
+  merge: true
+
+processing_params:
+  inputs:
+    - name: text
+      key: text
+
+  outputs:
+    - name: score
+      type: custom
+    # Rows whose score is not above the threshold are dropped here; later
+    # steps and the output schema never see them. The mock texts are 30 to 49
+    # characters long, so this keeps three of the five distinct sentences.
+    - type: filter
+      predicate: score > 33
+
+  remove_columns: true
+  output_schema:
+    text: "{{ text }}"
+    score: "{{ score }}"
