@@ -14,6 +14,7 @@ from dacite import Config, from_dict
 import mmirage.core.loader.jsonl  # noqa: F401
 import mmirage.core.loader.local_hf  # noqa: F401
 import mmirage.core.process.processors.batch_api.config  # noqa: F401
+import mmirage.core.process.processors.custom.config  # noqa: F401
 import mmirage.core.process.processors.image_gen.config  # noqa: F401
 import mmirage.core.process.processors.llm.config  # noqa: F401
 from mmirage.config.config import MMirageConfig
