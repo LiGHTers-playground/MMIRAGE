@@ -61,7 +61,7 @@ def run_local(
     sglang = get_sglang_server_config(cfg)
     if sglang is not None and not os.environ.get(MMIRAGE_SGLANG_BASE_URL):
         with shared_sglang_server(sglang):
-            return run_local(config_path, shard_id, collect_stats)
+            return run_local(config_path, shard_id, collect_stats, export_prompts_path)
 
     command = [sys.executable, "-m", "mmirage.shard_process", "--config", config_path]
     if export_prompts_path is not None:
