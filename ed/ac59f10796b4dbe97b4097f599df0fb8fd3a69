@@ -1,0 +1,24 @@
+pyproject.toml
+  s_95bd80318259cc::t_b9045ad0eb575d 90,92-111
+  s_95bd80318259cc::t_73dbea7042de23 54-55,82-89,91
+docs/developer.md
+  s_95bd80318259cc::t_b9045ad0eb575d 92-93
+.github/workflows/tests.yml
+  s_95bd80318259cc::t_b9045ad0eb575d 35-53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "edac59f10796b4dbe97b4097f599df0fb8fd3a69",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
