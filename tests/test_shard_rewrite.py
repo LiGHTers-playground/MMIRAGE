@@ -8,7 +8,7 @@ from mmirage.core.process.mapper import MMIRAGEMapper
 from mmirage.core.process.processors.filter.config import FilterStep
 from mmirage.core.process.variables import InputVar
 from mmirage.core.writer.renderer import TemplateRenderer
-from mmirage.shard_process import _map_split
+from mmirage.shard_process import _map_split, rewrite_batch
 
 OUTPUT_SCHEMA = {"source": "{{ text }}", "score": "{{ score }}"}
 TEXTS = ["long text", "no", "also long", "x"]
@@ -137,11 +137,12 @@ def test_no_filter_path_is_unchanged():
         input_vars=[InputVar(name="text", key="text")],
         output_vars=[FakeOutputVar(name="score")],
     )
+    renderer = TemplateRenderer(OUTPUT_SCHEMA)
     ds = Dataset.from_dict({"text": TEXTS, "extra": [1, 2, 3, 4]})
     out = _map_split(
         ds,
         mapper=mapper,
-        renderer=TemplateRenderer(OUTPUT_SCHEMA),
+        renderer=renderer,
         image_base_path=None,
         batch_size=500,
         remove_columns=False,
@@ -149,3 +150,14 @@ def test_no_filter_path_is_unchanged():
     )
     assert out.column_names == ["text", "extra", "source", "score"]
     assert len(out) == 4
+
+    # Same rows as a plain Dataset.map with the pre-filter kwargs.
+    direct = ds.map(
+        rewrite_batch,
+        batched=True,
+        batch_size=500,
+        load_from_cache_file=False,
+        fn_kwargs={"mapper": mapper, "renderer": renderer, "image_base_path": None},
+        remove_columns=[],
+    )
+    assert out.to_list() == direct.to_list()

@@ -17,7 +17,6 @@ from mmirage.config.utils import load_mmirage_config
 from mmirage.core.loader.base import DatasetLike
 from mmirage.core.loader.utils import load_datasets_from_configs
 from mmirage.core.process.mapper import MMIRAGEMapper
-from mmirage.core.process.processors.filter.config import FilterStep
 from mmirage.core.process.variables import OutputVar
 from mmirage.core.writer.renderer import TemplateRenderer
 from mmirage.shard_utils import (
@@ -131,18 +130,11 @@ def rewrite_batch(
         renderer: TemplateRenderer for generating output.
         image_base_path: Optional base directory for resolving relative image paths.
         kept: When given, the dataset index of every row that survived the
-            filter steps is appended to it, in dataset order. Requires
-            ``indices``.
+            filter steps is appended to it, in the order the rows come back
+            from the mapper. Requires ``indices``.
     Returns:
         Dictionary mapping output keys to lists of rendered values.
-    Raises:
-        ValueError: If variables are not computable given the configuration.
     """
-    if not mapper.validate_vars():
-        raise ValueError(
-            "Uncomputable variables detected. Verify your configuration and make sure that there is no undefined variables"
-        )
-
     batch_environment, positions = mapper.rewrite_batch(batch, image_base_path)
     if kept is not None:
         if indices is None:
@@ -179,8 +171,7 @@ def _map_split(
     row positions are collected instead, and when the caller wants the input
     columns they are selected back and joined column-wise onto the output.
     """
-    has_filter = any(isinstance(o, FilterStep) for o in mapper.output_vars)
-    if not has_filter:
+    if not mapper.has_filter:
         return split_ds.map(
             rewrite_batch,
             batched=True,
@@ -215,6 +206,13 @@ def _map_split(
     )
     if remove_columns or len(ds_processed) == 0:
         return ds_processed
+
+    # The positions are tracked beside the environments, so they can only
+    # desync if a processor returns a batch of a different length than it was
+    # given; `concatenate_datasets(axis=1)` would join the halves regardless.
+    assert len(kept) == len(ds_processed), (
+        f"{len(kept)} kept row indices for {len(ds_processed)} output rows"
+    )
 
     # Join the surviving input rows back on. `concatenate_datasets(axis=1)`
     # keeps features such as ClassLabel and Image as-is but raises on a
@@ -329,7 +327,15 @@ def main():
                 f"Logical shard {shard_id} has no input rows; marking success "
                 "without loading processors."
             )
-            _mark_success(state_dir, stats=ShardStats(rows_processed=0, rows_written=0))
+            _mark_success(
+                state_dir,
+                stats=ShardStats(
+                    rows_processed=0,
+                    rows_written=0,
+                    rows_filtered=0,
+                    rows_dropped_by_error=0,
+                ),
+            )
             return
 
         mapper = MMIRAGEMapper(
@@ -423,14 +429,8 @@ def main():
             # Before any save, so a two-dataset shard never writes dataset 0
             # and then fails on dataset 1.
             mapper.check_filter_errors()
-            for idx, seen in mapper.rows_seen.items():
-                step = mapper.output_vars[idx]
-                predicate = step.predicate if isinstance(step, FilterStep) else ""
-                logger.info(
-                    f"Filter step outputs[{idx}] ({predicate!r}): {seen} rows in, "
-                    f"{mapper.rows_filtered[idx]} filtered, "
-                    f"{mapper.rows_dropped_by_error[idx]} dropped by error"
-                )
+            for line in mapper.filter_summary():
+                logger.info(line)
 
             for ds_idx, (ds_config, ds_to_write) in enumerate(
                 zip(datasets_config, ds_processed_all)
