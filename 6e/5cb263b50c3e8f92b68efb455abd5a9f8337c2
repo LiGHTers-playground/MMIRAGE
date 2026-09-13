@@ -1,0 +1,37 @@
+tests/test_filter_mapper.py
+  s_95bd80318259cc::t_41a8c665201548 6,10
+src/mmirage/core/process/mapper.py
+  s_95bd80318259cc::t_9ab29efde58c18 120
+  s_95bd80318259cc::t_20f709b6461549 103,110
+src/mmirage/shard_process.py
+  s_95bd80318259cc::t_552ba7b06b5480 118-119,123,128-129,133-134,145-146,150-153
+  s_95bd80318259cc::t_f7e32ed89b1e9b 13,20
+  s_95bd80318259cc::t_a95622d4d438af 171-175,177-196,200,207,209-219,221
+  s_95bd80318259cc::t_d43ad438597cf1 457-458
+  s_95bd80318259cc::t_c1916d62bd5e6d 408-419
+  s_95bd80318259cc::t_2e35dc5a9f5fae 147-149
+tests/fake_processor.py
+  s_95bd80318259cc::t_eb755ebb79e86a 1-47
+tests/test_shard_rewrite.py
+  s_95bd80318259cc::t_ee01a7638ab178 58
+  s_95bd80318259cc::t_480e900e532529 1-57,59-82,90-92,95-151
+  s_95bd80318259cc::t_8ce242dfd51b7f 83-84
+  s_95bd80318259cc::t_2e35dc5a9f5fae 85-89
+  s_95bd80318259cc::t_9e69ecc29ad922 93-94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "6e5cb263b50c3e8f92b68efb455abd5a9f8337c2",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
