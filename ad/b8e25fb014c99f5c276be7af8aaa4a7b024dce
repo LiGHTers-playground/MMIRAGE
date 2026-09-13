@@ -1,0 +1,33 @@
+docs/cli.md
+  s_95bd80318259cc::t_d5721d1f6d7646 158-159
+  s_95bd80318259cc::t_c6fbb73a44445f 174-175
+  s_95bd80318259cc::t_8dbef9668841b0 190
+docs/batch_api.md
+  s_95bd80318259cc::t_58c7075aeb0c72 134
+README.md
+  s_95bd80318259cc::t_2ad140c7640b42 500-501
+  s_95bd80318259cc::t_461e2e1708ebee 520-521
+docs/configuration.md
+  s_95bd80318259cc::t_297a958f99b8b0 217,221-270
+docs/concepts.md
+  s_95bd80318259cc::t_754f3a681019a0 171-173
+  s_95bd80318259cc::t_21779484d0d23b 79-82
+docs/pipeline.md
+  s_95bd80318259cc::t_ecbaf400ff9add 134-147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "adb8e25fb014c99f5c276be7af8aaa4a7b024dce",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
