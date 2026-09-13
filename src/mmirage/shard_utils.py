@@ -36,7 +36,10 @@ class ShardStats:
     """Per-shard benchmark statistics recorded at completion."""
 
     runtime_seconds: Optional[float] = None
+    # rows_processed: input rows in this shard (drives throughput).
+    # rows_written: output rows saved to disk; 0 means no shard_* folder was written.
     rows_processed: Optional[int] = None
+    rows_written: Optional[int] = None
     throughput_rows_per_sec: Optional[float] = None
     gpu_util_mean: Optional[float] = None
     gpu_util_min: Optional[float] = None
@@ -72,6 +75,7 @@ class ShardStats:
         return cls(
             runtime_seconds=_opt_float(data.get("runtime_seconds")),
             rows_processed=_opt_int(data.get("rows_processed")),
+            rows_written=_opt_int(data.get("rows_written")),
             throughput_rows_per_sec=_opt_float(data.get("throughput_rows_per_sec")),
             gpu_util_mean=_opt_float(data.get("gpu_util_mean")),
             gpu_util_min=_opt_float(data.get("gpu_util_min")),
@@ -124,6 +128,7 @@ class ShardStats:
             if inference_runtime is not None
             else None,
             "rows_processed": self.rows_processed,
+            "rows_written": self.rows_written,
             "throughput_rows_per_sec": self.throughput_rows_per_sec,
             "gpu_util_mean": self.gpu_util_mean,
             "gpu_util_min": self.gpu_util_min,
