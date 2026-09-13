@@ -51,19 +51,13 @@ class BatchProviderConfigRegistry:
         cls._bootstrapped = False
 
     @classmethod
-    def get_config_cls(
-        cls,
-        provider: str,
-        default: Type[BatchProviderConfig] | None = None,
-    ) -> Type[BatchProviderConfig]:
+    def get_config_cls(cls, provider: str) -> Type[BatchProviderConfig]:
         cls._bootstrap_builtin_configs()
         provider_key = provider.strip().lower()
         if not provider_key:
             raise ValueError("provider must be a non-empty string")
         if provider_key in cls._registry:
             return cls._registry[provider_key]
-        if default is not None:
-            return default
         raise ValueError(
             f"Unknown batch provider '{provider}'. Available providers: {list(cls._registry.keys())}"
         )
@@ -95,13 +89,8 @@ def _extract_batch_provider_blocks(cfg: MMirageConfig) -> Dict[str, Dict[str, An
         if raw_provider is None:
             continue
 
-        if isinstance(raw_provider, BatchProviderConfig):
-            raw_block = asdict(raw_provider)
-        else:
-            raw_block = dict(raw_provider or {})
-
-        if not raw_block:
-            continue
+        # The loader already resolved every block into a validated config instance.
+        raw_block = asdict(raw_provider)
 
         provider = str(raw_block.get("provider", "")).strip().lower()
         if not provider:
@@ -120,14 +109,11 @@ def _extract_batch_provider_blocks(cfg: MMirageConfig) -> Dict[str, Dict[str, An
 def _instantiate_provider_config(
     provider: str, raw_block: Mapping[str, Any]
 ) -> BatchProviderConfig:
-    """Instantiate the provider config, falling back to the shared base config."""
+    """Instantiate the registered config class for ``provider``."""
     payload = dict(raw_block)
     payload.setdefault("provider", provider)
 
-    config_cls = BatchProviderConfigRegistry.get_config_cls(
-        provider,
-        default=BatchProviderConfig,
-    )
+    config_cls = BatchProviderConfigRegistry.get_config_cls(provider)
     return config_cls(**payload)
 
 
