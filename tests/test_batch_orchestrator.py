@@ -80,6 +80,45 @@ def test_orchestrator_writes_provider_neutral_metadata_with_flush_reason(tmp_pat
     assert second["provider_batch_id"].startswith("batch-chunk-")
 
 
+def test_orchestrator_records_shard_id_in_metadata(tmp_path):
+    from mmirage.core.process.batch.orchestrator import BatchSubmissionOrchestrator
+
+    metadata_path = tmp_path / "batch_metadata.jsonl"
+    config = BatchProviderConfig(
+        provider="unit",
+        max_chunk_bytes=10,
+        metadata_output_path=str(metadata_path),
+    )
+    orchestrator = BatchSubmissionOrchestrator(
+        adapter=RecordingAdapter(), config=config, shard_id=3
+    )
+
+    orchestrator.add_requests(
+        requests=[{"custom_id": "x1", "size_bytes": 8}],
+        source_indices=[0],
+    )
+    orchestrator.finalize()
+
+    lines = metadata_path.read_text(encoding="utf-8").strip().splitlines()
+    assert len(lines) == 1
+    assert json.loads(lines[0])["shard_id"] == 3
+
+
+def test_batch_api_processor_passes_shard_id_to_orchestrators(tmp_path, unit_provider):
+    config = BatchApiProcessorConfig(
+        type="batch_api",
+        provider_config=UnitBatchConfig(
+            provider="unit",
+            metadata_output_path=str(tmp_path / "metadata.jsonl"),
+        ),
+    )
+
+    processor = ProcessorRegistry.get_processor("batch_api")(config, shard_id=2)
+
+    assert processor._text_orchestrator.shard_id == 2
+    assert processor._multimodal_orchestrator.shard_id == 2
+
+
 def test_orchestrator_exports_prompts_and_skips_submit(tmp_path):
     from mmirage.core.process.batch.orchestrator import BatchSubmissionOrchestrator
 
