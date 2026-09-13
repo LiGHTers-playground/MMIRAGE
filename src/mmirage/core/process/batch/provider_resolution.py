@@ -143,10 +143,8 @@ def resolve_single_provider_config(raw_block: Mapping[str, Any]) -> BatchProvide
         raise ValueError("batch config must include a non-empty provider")
     payload["provider"] = provider
 
-    try:
-        BatchProviderConfigRegistry.get_config_cls(provider)
-    except ValueError as exc:
-        raise ValueError(str(exc)) from exc
+    # Rejects an unknown provider before the payload is instantiated.
+    BatchProviderConfigRegistry.get_config_cls(provider)
 
     try:
         return _instantiate_provider_config(provider, payload)
