@@ -165,16 +165,23 @@ class VariableEnvironment:
     """Environment for storing and accessing variables during processing."""
 
     def __init__(
-        self, var_env: Dict[str, Any], image_vars: Optional[set] = None
+        self,
+        var_env: Dict[str, Any],
+        image_vars: Optional[set] = None,
+        row_index: Optional[int] = None,
     ) -> None:
         """Initialize a variable environment.
 
         Args:
             var_env: Dictionary mapping variable names to their values.
             image_vars: Set of variable names that represent images. Defaults to empty set.
+            row_index: Position of the sample in its dataset split, when known.
+                Kept outside the variables so templates and user functions
+                never see it.
         """
         self._vars_env = var_env
         self._image_vars = image_vars or set()
+        self.row_index = row_index
 
     def with_variable(
         self, key: str, value: Any, is_image: bool = False
@@ -192,7 +199,9 @@ class VariableEnvironment:
         new_image_vars = self._image_vars.copy()
         if is_image:
             new_image_vars.add(key)
-        return VariableEnvironment(self._vars_env | {key: value}, new_image_vars)
+        return VariableEnvironment(
+            self._vars_env | {key: value}, new_image_vars, row_index=self.row_index
+        )
 
     def to_dict(self) -> MappingProxyType:
         """Get an immutable view of the variable dictionary.
@@ -252,6 +261,7 @@ class VariableEnvironment:
         sample: Dict[str, Any],
         input_vars: List[InputVar],
         image_base_path: Optional[str] = None,
+        row_index: Optional[int] = None,
     ) -> "VariableEnvironment":
         """Create a variable environment from a single sample.
 
@@ -259,6 +269,7 @@ class VariableEnvironment:
             sample: Dictionary containing the data for one sample.
             input_vars: List of input variable definitions to extract.
             image_base_path: Optional base directory for resolving relative image paths.
+            row_index: Position of the sample in its dataset split, when known.
 
         Returns:
             VariableEnvironment: Environment populated with extracted variables.
@@ -283,13 +294,14 @@ class VariableEnvironment:
 
             ret[input_var.name] = value
 
-        return VariableEnvironment(ret, image_vars)
+        return VariableEnvironment(ret, image_vars, row_index=row_index)
 
     @staticmethod
     def from_batch_input_variables(
         batch: Dict[str, List[Any]],
         input_vars: List[InputVar],
         image_base_path: Optional[str] = None,
+        indices: Optional[List[int]] = None,
     ) -> List["VariableEnvironment"]:
         """Extract input variables from a batch of samples.
 
@@ -297,6 +309,9 @@ class VariableEnvironment:
             batch: Dictionary mapping column names to lists of values.
             input_vars: List of input variable definitions.
             image_base_path: Optional base directory for resolving relative image paths.
+            indices: Dataset positions of the samples, one per row of the batch
+                (what ``Dataset.map(with_indices=True)`` passes). When given,
+                each environment records its position as ``row_index``.
 
         Returns:
             List of VariableEnvironments, one for each sample in the batch.
@@ -308,10 +323,13 @@ class VariableEnvironment:
             {k: batch[k][i] for k in batch.keys()} for i in range(batch_size)
         ]
 
-        for sample in batch_list:
+        for i, sample in enumerate(batch_list):
             vars_samples.append(
                 VariableEnvironment.from_input_variables(
-                    sample, input_vars, image_base_path
+                    sample,
+                    input_vars,
+                    image_base_path,
+                    row_index=indices[i] if indices is not None else None,
                 )
             )
 
