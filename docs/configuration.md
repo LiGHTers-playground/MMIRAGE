@@ -214,10 +214,60 @@ processing_params:
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `name` | `str` | — | Variable name made available in `output_schema` templates |
-| `type` | `str` | — | Processor type — must match a processor declared in `processors` (`llm`, `batch_api`, `image_gen` or `custom`) |
+| `type` | `str` | — | Processor type — must match a processor declared in `processors` (`llm`, `batch_api`, `image_gen` or `custom`) — or `filter` (see below) |
 | `output_type` | `str` | `plain` | `"plain"` (raw text) or `"JSON"` (structured object) |
 | `prompt` | `str` | — | Jinja2 template for the LLM prompt |
 | `output_schema` | `list[str]` or `dict` | `[]` | Fields the model must produce when `output_type: JSON` (see below) |
+| `predicate` | `str` | — | `type: filter` only. Jinja2 expression; rows where it is falsy are dropped |
+
+`outputs` is an ordered list of steps: each step may reference the inputs and
+the outputs declared before it, and the config is rejected at load if it does
+not.
+
+### Filter step
+
+A `filter` step drops rows instead of producing a variable. It has no `name`
+and needs no entry in `processors`. Rows that fail the predicate never reach
+the steps after it, nor the `output_schema`.
+
+```yaml
+outputs:
+  - name: score
+    type: custom
+  - type: filter
+    predicate: score > 0.5
+```
+
+The predicate is a Jinja2 expression over the variables declared before the
+step. Filters apply, so use `foo | length > 0` rather than `foo.len`. The
+`{{ score > 0.5 }}` form is accepted too, but YAML reads a bare `{{` as a
+mapping, so it must be quoted: `predicate: "{{ score > 0.5 }}"`.
+
+A row whose predicate raises — a missing value, `None` in a comparison, a
+misspelled attribute — is dropped and counted in `rows_dropped_by_error`
+rather than `rows_filtered`. A step whose predicate raises on every row it
+sees fails the shard, since that is a wrong predicate, not bad data.
+
+To let a model decide, compose an `llm` step with a typed `output_schema` and
+a filter on its verdict:
+
+```yaml
+outputs:
+  - name: verdict
+    type: llm
+    output_type: JSON
+    output_schema:
+      keep: bool
+      reason: str
+    prompt: |
+      Is this text worth keeping? Answer with keep and a short reason.
+      {{ text }}
+  - type: filter
+    predicate: verdict.keep
+```
+
+The typed form is required here: the list form makes every field a string,
+and the string `"false"` is truthy.
 
 ### `processing_params.outputs[*].output_schema`
 

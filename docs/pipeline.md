@@ -131,6 +131,20 @@ A `custom` output skips the prompt step entirely: the row's variables are passed
 as a dictionary to your Python function, running in a separate process pool
 (see [Custom Module](custom_module.md)).
 
+A `filter` step evaluates its predicate on every row of the batch and drops the
+rows where it is falsy. The steps after it only see the rows that survived, so
+a filter placed before an `image_gen` step saves the generation for rows that
+would be dropped anyway. A shard whose rows are all filtered out writes no
+`shard_*` folder; `mmirage stats` reports the counts as `rows_filtered` and
+`rows_dropped_by_error`.
+
+The filter lives in the `outputs` list, rather than in a separate section,
+because where it sits is what it means: it can only read the variables
+declared above it, and only the steps below it are skipped for dropped rows.
+Its predicate is a Jinja2 expression because the variables it reads are the
+same ones prompts and the `output_schema` already address with Jinja2, so
+there is one syntax to learn and one set of filters (`| length`, `| lower`).
+
 ### 4c. Render the output schema
 
 Once all output variables are computed, the `TemplateRenderer` applies the

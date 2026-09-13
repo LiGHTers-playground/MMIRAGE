@@ -131,6 +131,7 @@ During this run, MMIRAGE maps over your datasets, generates request payloads, wr
 - The pipeline execution completes immediately after submission.
 - The output files in the dataset's `output_dir` shards will contain temporary placeholder variables of the format `__BATCH_SUBMITTED__:<output_name>-<modality>-s<shard_id>-<request_number>`. The part after the prefix is the `custom_id` used in the receipt and in the provider results; every shard numbers its requests from 1, so the shard id is what keeps ids unique across shards.
 - MMIRAGE generates **metadata receipt files** named `<metadata_output_path>.<modality>.<run_id>.jsonl` (e.g., `batch_metadata.text.abc123.jsonl`). These receipt files store the API batch IDs and map each API request's `custom_id` to its original dataset `source_index`. Each receipt also records the `shard_id` that wrote it; receipts from before this field existed are read as shard 0.
+- Steps listed after a `batch_api` output see only that placeholder until `mmirage merge` retrieves the results. A `filter` step whose predicate reads a `batch_api` output is therefore rejected when the config loads.
 
 ### Step 2: Check Batch Job Status
 Because batch jobs run asynchronously on the provider's server and can take up to 24 hours to complete, monitor their status with `mmirage check`, which reports provider batch status instead of shard status when the config declares a `batch_api` processor:
