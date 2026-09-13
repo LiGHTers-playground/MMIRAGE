@@ -12,6 +12,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIGS_DIR = os.path.join(REPO_ROOT, "configs")
 MOCK_CUSTOM = os.path.join(CONFIGS_DIR, "config_mock_custom_module.yaml")
 MOCK_OPENAI_BATCH = os.path.join(CONFIGS_DIR, "config_mock_openai_batch.yaml")
+MOCK_FILTER = os.path.join(CONFIGS_DIR, "config_mock_filter.yaml")
 
 
 @pytest.fixture(autouse=True)
@@ -76,6 +77,17 @@ def test_valid_filter_after_its_inputs_loads(tmp_path):
         {"type": "filter", "predicate": "custom_result | length > 0 and text"},
     )
     assert [o.type for o in cfg.processing_params.outputs] == ["custom", "filter"]
+
+
+def test_mock_filter_config_declares_a_scorer_then_a_filter():
+    cfg = load_mmirage_config(MOCK_FILTER)
+    outputs = cfg.processing_params.outputs
+
+    assert [o.type for o in outputs] == ["custom", "filter"]
+    assert outputs[0].name == "score"
+    assert outputs[1].predicate == "score > 33"
+    assert cfg.processing_params.remove_columns is True
+    assert cfg.processors[0].function_name == "score_text"
 
 
 @pytest.mark.parametrize(
