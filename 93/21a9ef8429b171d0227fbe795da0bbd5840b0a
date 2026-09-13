@@ -1,0 +1,22 @@
+tests/test_batch_api_processor_export.py
+  s_95bd80318259cc::t_113e6621c0c2e2 4
+  s_95bd80318259cc::t_161be31d49e09e 124-152
+src/mmirage/core/process/processors/batch_api/batch_api_processor.py
+  s_95bd80318259cc::t_b48240079b9e6e 71-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9321a9ef8429b171d0227fbe795da0bbd5840b0a",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
