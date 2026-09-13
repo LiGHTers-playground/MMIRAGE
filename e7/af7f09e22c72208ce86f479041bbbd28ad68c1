@@ -1,0 +1,25 @@
+tests/mock_script/mock_script.py
+  s_95bd80318259cc::t_05c8ef9cb437f9 5-9
+configs/config_mock_filter.yaml
+  s_95bd80318259cc::t_2e4b455afa32d5 1-32,35,37-41
+  s_95bd80318259cc::t_fa41a525691f23 33-34,36
+tests/test_processing_params_validation.py
+  s_95bd80318259cc::t_3ddd796b34d129 15
+  s_95bd80318259cc::t_26922c91644ed1 82-92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e7af7f09e22c72208ce86f479041bbbd28ad68c1",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
