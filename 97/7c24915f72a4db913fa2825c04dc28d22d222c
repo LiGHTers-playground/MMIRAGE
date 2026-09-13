@@ -1,0 +1,26 @@
+src/mmirage/shard_process.py
+  s_95bd80318259cc::t_37a1bfa80c523c 232-237,239-240
+  s_95bd80318259cc::t_546d8e9d5a48b2 238
+src/mmirage/shard_utils.py
+  s_95bd80318259cc::t_8d339c552a2348 78
+  s_95bd80318259cc::t_5de3d92f493394 131
+  s_95bd80318259cc::t_7bbf881cf1a3ad 39-40,42
+tests/test_shard_process_empty.py
+  s_95bd80318259cc::t_5c11c719b5c798 1-73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "977c24915f72a4db913fa2825c04dc28d22d222c",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
