@@ -110,16 +110,12 @@ class AnthropicBatchAdapter(BatchSubmissionAdapter):
     def parse_submission_result(
         self, raw_result: Dict[str, Any]
     ) -> BatchSubmissionResult:
-        coerced = self._coerce_mapping(raw_result)
         batch_id = str(self._attr_or_get(raw_result, "id", "") or "")
-        status = self._attr_or_get(raw_result, "status", None)
-        if not status and isinstance(coerced, Mapping):
-            status = (
-                coerced.get("status")
-                or coerced.get("processing_status")
-                or coerced.get("state")
-                or coerced.get("status_code")
-            )
+        # submit_chunk hands over a dict with 'status'; the SDK's MessageBatch
+        # only has 'processing_status'.
+        status = self._attr_or_get(raw_result, "status", None) or self._attr_or_get(
+            raw_result, "processing_status", None
+        )
         return BatchSubmissionResult(
             provider_batch_id=batch_id,
             status=self._normalize_status(status),
@@ -326,30 +322,9 @@ class AnthropicBatchAdapter(BatchSubmissionAdapter):
         return message if isinstance(message, str) else f"Request {result_type}"
 
     @staticmethod
-    def _parse_results_response(response: Any) -> List[Dict[str, Any]]:
-        if isinstance(response, list):
-            return [AnthropicBatchAdapter._coerce_mapping(item) for item in response]
-
-        coerced = AnthropicBatchAdapter._coerce_mapping(response)
-        if isinstance(coerced, dict):
-            return [coerced]
-
-        if isinstance(response, (str, bytes)):
-            text = response.decode("utf-8") if isinstance(response, bytes) else response
-            return AnthropicBatchAdapter._parse_jsonl(text)
-
-        if isinstance(response, Iterable):
-            rows: List[Dict[str, Any]] = []
-            for item in response:
-                coerced_item = AnthropicBatchAdapter._coerce_mapping(item)
-                if isinstance(coerced_item, dict):
-                    rows.append(coerced_item)
-                elif isinstance(item, str):
-                    rows.extend(AnthropicBatchAdapter._parse_jsonl(item))
-            return rows
-
-        logger.debug("Unhandled Anthropic results response type: %s", type(response))
-        return []
+    def _parse_results_response(response: Iterable[Any]) -> List[Dict[str, Any]]:
+        # The SDK streams the results file as MessageBatchIndividualResponse models.
+        return [AnthropicBatchAdapter._coerce_mapping(item) for item in response]
 
     @staticmethod
     def _normalize_status(status: Any) -> str:
@@ -363,21 +338,6 @@ class AnthropicBatchAdapter(BatchSubmissionAdapter):
         return "unknown"
 
     @staticmethod
-    def _parse_jsonl(text: str) -> List[Dict[str, Any]]:
-        rows: List[Dict[str, Any]] = []
-        for line in text.splitlines():
-            raw = line.strip()
-            if not raw:
-                continue
-            try:
-                parsed = json.loads(raw)
-            except json.JSONDecodeError:
-                continue
-            if isinstance(parsed, dict):
-                rows.append(parsed)
-        return rows
-
-    @staticmethod
     def _coerce_mapping(item: Any) -> Any:
         if isinstance(item, Mapping):
             return dict(item)
@@ -386,12 +346,6 @@ class AnthropicBatchAdapter(BatchSubmissionAdapter):
                 return dict(item.model_dump())
             except Exception:
                 logger.debug("model_dump() failed on %s", type(item).__name__)
-                return item
-        if hasattr(item, "dict"):
-            try:
-                return dict(item.dict())
-            except Exception:
-                logger.debug("dict() failed on %s", type(item).__name__)
                 return item
         return item
 
@@ -418,11 +372,9 @@ class AnthropicBatchAdapter(BatchSubmissionAdapter):
 
     @staticmethod
     def _resolve_batches_client(client: Anthropic) -> Any:
-        if hasattr(client, "messages") and hasattr(client.messages, "batches"):
-            return client.messages.batches
-        if hasattr(client, "beta") and hasattr(client.beta, "messages"):
-            return client.beta.messages.batches
-        raise AttributeError("Anthropic client does not expose messages.batches")
+        # Typed Any: the adapter's dict-shaped contract does not match the SDK's
+        # typed client yet, so its calls stay unchecked here.
+        return client.messages.batches
 
     @staticmethod
     def _attr_or_get(obj: Any, attr: str, default: Any = None) -> Any:
