@@ -1,7 +1,7 @@
 """Mapper for orchestrating variable transformations."""
 
 import logging
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Set, cast
 
 from mmirage.core.process.base import (
     AutoProcessor,
@@ -9,6 +9,7 @@ from mmirage.core.process.base import (
     BaseProcessorConfig,
     TokenCounts,
 )
+from mmirage.core.process.processors.filter.config import FilterStep
 from mmirage.core.process.variables import (
     BaseVar,
     InputVar,
@@ -52,6 +53,16 @@ class MMIRAGEMapper:
         self.input_vars = input_vars
         self.output_vars = output_vars
 
+        # Per filter step, keyed by its index in output_vars: rows that reached
+        # the step, rows its predicate rejected, rows its predicate raised on.
+        filter_indices = [
+            i for i, v in enumerate(output_vars) if isinstance(v, FilterStep)
+        ]
+        self.rows_seen: Dict[int, int] = {i: 0 for i in filter_indices}
+        self.rows_filtered: Dict[int, int] = {i: 0 for i in filter_indices}
+        self.rows_dropped_by_error: Dict[int, int] = {i: 0 for i in filter_indices}
+        self._warned: Set[int] = set()
+
         for config in processor_configs:
             processor_cls = AutoProcessor.from_name(config.type)
             logger.info(f"✅ Successfully loaded processor of type {config.type}")
@@ -79,7 +90,9 @@ class MMIRAGEMapper:
                 )
                 return False
 
-            vars.append(output_var)
+            # A filter step declares no variable of its own.
+            if not isinstance(output_var, FilterStep):
+                vars.append(output_var)
 
         return True
 
@@ -96,6 +109,7 @@ class MMIRAGEMapper:
 
         Returns:
             List of VariableEnvironments with all output variables computed.
+            Rows rejected by a filter step are absent from the list.
 
         Raises:
             RuntimeError: If an output variable type has no registered processor.
@@ -104,7 +118,28 @@ class MMIRAGEMapper:
             batch, self.input_vars, image_base_path
         )
 
-        for output_var in self.output_vars:
+        for idx, output_var in enumerate(self.output_vars):
+            # Every row was filtered out: nothing left for the later steps.
+            if not batch_environment:
+                break
+
+            if isinstance(output_var, FilterStep):
+                result = output_var.apply(batch_environment)
+                self.rows_seen[idx] += len(batch_environment)
+                self.rows_filtered[idx] += result.n_filtered
+                self.rows_dropped_by_error[idx] += result.n_errored
+                if result.first_error is not None and idx not in self._warned:
+                    self._warned.add(idx)
+                    position, exc = result.first_error
+                    logger.warning(
+                        f"Filter step outputs[{idx}] ({output_var.predicate!r}) raised "
+                        f"on row {position} of a batch: {type(exc).__name__}: {exc}. "
+                        "Such rows are dropped and counted in rows_dropped_by_error; "
+                        "further errors from this step are not logged."
+                    )
+                batch_environment = result.kept
+                continue
+
             if output_var.type not in self.processors:
                 raise RuntimeError(
                     f"Output {output_var.type} not in registered processors: {self.processors.keys()}"
@@ -116,6 +151,32 @@ class MMIRAGEMapper:
             )
 
         return batch_environment
+
+    def total_rows_filtered(self) -> int:
+        """Rows rejected by a filter predicate, summed over all filter steps."""
+        return sum(self.rows_filtered.values())
+
+    def total_rows_dropped_by_error(self) -> int:
+        """Rows whose filter predicate raised, summed over all filter steps."""
+        return sum(self.rows_dropped_by_error.values())
+
+    def check_filter_errors(self) -> None:
+        """Fail when a filter step's predicate raised on every row it saw.
+
+        A predicate that errors on some rows reflects the data; one that errors
+        on all of them is wrong (misspelled attribute, wrong type) and would
+        otherwise silently drop the whole shard.
+
+        Raises:
+            RuntimeError: Naming the step and its predicate.
+        """
+        for idx, seen in self.rows_seen.items():
+            if seen > 0 and self.rows_dropped_by_error[idx] == seen:
+                step = cast(FilterStep, self.output_vars[idx])
+                raise RuntimeError(
+                    f"Filter step outputs[{idx}] ({step.predicate!r}) raised on "
+                    f"every one of its {seen} rows; the predicate is wrong, not the data"
+                )
 
     def get_token_counts(self) -> TokenCounts:
         """Return cumulative token counts aggregated across all LLM processors.
