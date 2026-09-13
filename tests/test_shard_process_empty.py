@@ -8,6 +8,7 @@ import pytest
 import yaml
 
 from mmirage import shard_process
+from mmirage.core.writer.renderer import TemplateRenderer
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MOCK_CONFIG = os.path.join(REPO_ROOT, "configs", "config_mock_custom_module.yaml")
@@ -21,7 +22,13 @@ class _ExplodingMapper:
         raise AssertionError("MMIRAGEMapper must not be built for an empty shard")
 
 
-def _write_config(tmp_path, num_rows: int, num_shards: int, shard_id: int) -> str:
+def _write_config(
+    tmp_path,
+    num_rows: int,
+    num_shards: int,
+    shard_id: int,
+    remove_columns: bool = False,
+) -> str:
     """Copy the mock custom-module config with all paths rewritten under tmp_path."""
     data_path = tmp_path / "data.jsonl"
     with open(data_path, "w") as f:
@@ -37,6 +44,8 @@ def _write_config(tmp_path, num_rows: int, num_shards: int, shard_id: int) -> st
     cfg["loading_params"]["datasets"][0]["path"] = str(data_path)
     cfg["loading_params"]["datasets"][0]["output_dir"] = str(tmp_path / "output")
     cfg["execution_params"]["mode"] = "local"
+    if remove_columns:
+        cfg["processing_params"]["remove_columns"] = True
 
     config_path = tmp_path / "config.yaml"
     with open(config_path, "w") as f:
@@ -71,3 +80,24 @@ def test_non_empty_shard_still_builds_mapper(tmp_path, monkeypatch):
     with open(tmp_path / "state" / "shard_0" / "status.json") as f:
         status = json.load(f)
     assert status["status"] == "failed"
+
+
+def test_map_yielding_zero_rows_writes_no_output_folder(tmp_path, monkeypatch):
+    # Let the real mapper and custom processor run, but render every batch to
+    # 0 rows so the map filters out all input.
+    def _render_nothing(self, batch):
+        return {key: [] for key in self.output_schema}
+
+    monkeypatch.setattr(TemplateRenderer, "batch_render", _render_nothing)
+    config_path = _write_config(
+        tmp_path, num_rows=2, num_shards=1, shard_id=0, remove_columns=True
+    )
+    monkeypatch.setattr(sys, "argv", ["shard_process", "--config", config_path])
+
+    shard_process.main()
+
+    with open(tmp_path / "state" / "shard_0" / "status.json") as f:
+        status = json.load(f)
+    assert status["status"] == "success"
+    assert status["stats"]["rows_processed"] == 2
+    assert not (tmp_path / "output" / "shard_0").exists()

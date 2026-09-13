@@ -336,6 +336,22 @@ def _count_rows(ds: DatasetLike) -> int:
     return len(ds)
 
 
+def _drop_empty_splits(ds: DatasetLike) -> Optional[DatasetLike]:
+    """Return the dataset without its 0-row splits, or None if nothing is left.
+
+    A 0-row dataset must never reach `_save_dataset_atomic`: `save_to_disk`
+    either fails outright (with an `Image` column) or writes a folder that
+    `load_from_disk` cannot reload, and `cast_column` on 0 rows raises.
+    """
+    if isinstance(ds, DatasetDict):
+        kept = {name: split for name, split in ds.items() if len(split) > 0}
+        dropped = [name for name in ds if name not in kept]
+        if dropped:
+            logger.info(f"Dropping 0-row split(s) before save: {dropped}")
+        return DatasetDict(kept) if kept else None
+    return ds if len(ds) > 0 else None
+
+
 def _shard_split(split_ds: Dataset, num_shards: int, shard_id: int) -> Dataset:
     """Shard a single dataset, returning an empty dataset for out-of-range shards.
 

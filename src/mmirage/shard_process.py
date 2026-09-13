@@ -25,6 +25,7 @@ from mmirage.shard_utils import (
     _cleanup_old_shard_data,
     _count_rows,
     _dataset_out_dir,
+    _drop_empty_splits,
     _mark_failure,
     _mark_running,
     _mark_success,
@@ -253,7 +254,7 @@ def main():
             if collect_stats and gpu_poller is not None:
                 gpu_poller.start()
 
-            ds_processed_all: List[DatasetLike] = []
+            ds_processed_all: List[Optional[DatasetLike]] = []
             for ds_idx, ds_shard in enumerate(ds_all_shard):
                 ds_config = datasets_config[ds_idx]
                 if processing_params.remove_columns:
@@ -282,6 +283,17 @@ def main():
                 # Drain stateful batch accumulators once this dataset map iteration finishes.
                 mapper.finalize_processors()
 
+                # A 0-row dataset cannot be cast or saved; None means "nothing to write".
+                ds_to_save = _drop_empty_splits(ds_processed)
+                if ds_to_save is None:
+                    logger.info(
+                        f"Shard {shard_id} wrote 0 rows for dataset {ds_idx}; "
+                        "no output folder will be created."
+                    )
+                    ds_processed_all.append(None)
+                    continue
+                ds_processed = ds_to_save
+
                 image_cols = _image_path_schema_cols(
                     processing_params.outputs,
                     processing_params.output_schema,
@@ -304,6 +316,8 @@ def main():
             for ds_idx, (ds_config, ds_processed) in enumerate(
                 zip(datasets_config, ds_processed_all)
             ):
+                if ds_processed is None:
+                    continue
                 out_dir = _dataset_out_dir(shard_id, ds_config)
                 _save_dataset_atomic(ds_processed, out_dir)
                 logger.info(f"✅ Saved dataset {ds_idx} shard in: {out_dir}")
