@@ -4,6 +4,20 @@ from types import SimpleNamespace
 from mmirage.config.openai_batch import OpenAIBatchConfig
 
 
+def test_metadata_record_reads_shard_id_and_defaults_it_for_old_receipts():
+    from mmirage.core.process.batch.metadata_utils import BatchMetadataRecord
+
+    old_receipt = {
+        "provider": "openai",
+        "provider_batch_id": "batch_1",
+        "custom_id_to_source_index": {"c1": 0},
+    }
+    assert BatchMetadataRecord.from_mapping(old_receipt).shard_id == 0
+
+    new_receipt = {**old_receipt, "shard_id": 2}
+    assert BatchMetadataRecord.from_mapping(new_receipt).shard_id == 2
+
+
 def test_collect_and_merge_reconstructs_rows_deterministically(
     tmp_path, monkeypatch, caplog
 ):

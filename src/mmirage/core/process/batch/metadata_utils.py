@@ -17,6 +17,7 @@ class BatchMetadataRecord:
     provider: str
     provider_batch_id: str
     custom_id_to_source_index: Dict[str, int] = field(default_factory=dict)
+    shard_id: int = 0
 
     @classmethod
     def from_mapping(cls, payload: Mapping[str, Any]) -> "BatchMetadataRecord":
@@ -32,10 +33,17 @@ class BatchMetadataRecord:
                 except (TypeError, ValueError):
                     continue
 
+        # Receipts written before shard ids were recorded all belong to shard 0.
+        try:
+            shard_id = int(payload.get("shard_id", 0))
+        except (TypeError, ValueError):
+            shard_id = 0
+
         return cls(
             provider=provider,
             provider_batch_id=provider_batch_id,
             custom_id_to_source_index=custom_id_to_source_index,
+            shard_id=shard_id,
         )
 
 
