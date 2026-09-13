@@ -1,0 +1,26 @@
+src/mmirage/core/process/mapper.py
+  s_95bd80318259cc::t_b570fc6dfabc4c 56-65
+  s_95bd80318259cc::t_d993ce470e9b27 112,121-142
+  s_95bd80318259cc::t_d92ab9300d54e8 155-180
+  s_95bd80318259cc::t_dc5933ea934f23 4,12
+  s_95bd80318259cc::t_3b63aec6a8a71d 93-95
+tests/test_filter_mapper.py
+  s_95bd80318259cc::t_ed7998da8b225d 1-47,51-139
+  s_95bd80318259cc::t_43d6861a6c5dea 48-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a1bb9f40e56c3d0e07a8befaf9de56dab3c2227b",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
