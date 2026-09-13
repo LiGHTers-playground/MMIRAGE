@@ -1,0 +1,26 @@
+src/mmirage/core/process/processors/batch_api/config.py
+  s_95bd80318259cc::t_3854558effa5d7 68-70
+  s_95bd80318259cc::t_145bf11a8a61f4 5
+tests/test_filter_step.py
+  s_95bd80318259cc::t_a9f9140e997460 3-15
+  s_95bd80318259cc::t_50c64bc8d1d815 1-2,16
+src/mmirage/core/process/variables.py
+  s_95bd80318259cc::t_3cf30af61c97ad 9
+  s_95bd80318259cc::t_f47a23de988de2 72-74,78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "54cafa25149f6c33adf12574285045b4b8b135e8",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
