@@ -99,8 +99,8 @@ def test_batch_api_processor_exports_what_batch_process_sample_buffered(
     placeholders = processor.batch_process_sample(batch, output_var)
 
     assert [p.get("answer") for p in placeholders] == [
-        "__BATCH_SUBMITTED__:answer-text-1",
-        "__BATCH_SUBMITTED__:answer-text-2",
+        "__BATCH_SUBMITTED__:answer-text-s0-1",
+        "__BATCH_SUBMITTED__:answer-text-s0-2",
     ]
     # The chunk is not full, so both requests wait for the end of the dataset.
     assert processor._text_orchestrator.pending_count == 2
@@ -117,8 +117,8 @@ def test_batch_api_processor_exports_what_batch_process_sample_buffered(
         for line in export_file.read_text(encoding="utf-8").splitlines()
     ]
     assert [line["request"]["custom_id"] for line in lines] == [
-        "answer-text-1",
-        "answer-text-2",
+        "answer-text-s0-1",
+        "answer-text-s0-2",
     ]
     assert lines[0]["request"]["messages"][0]["content"] == "Question about Berne"
 
@@ -150,3 +150,25 @@ def test_batch_api_processor_export_mode_allows_empty_metadata_output_path(
     processor = processor_cls(config)
 
     assert processor._text_orchestrator._export_prompts_path is not None
+
+
+def test_batch_api_processor_request_ids_differ_across_shards(tmp_path, unit_provider):
+    config = BatchApiProcessorConfig(
+        type="batch_api",
+        provider_config=UnitBatchConfig(
+            provider="unit",
+            metadata_output_path=str(tmp_path / "meta.jsonl"),
+        ),
+        export_prompts_dir=str(tmp_path / "exports"),
+    )
+
+    processor_cls = ProcessorRegistry.get_processor("batch_api")
+    shard_0 = processor_cls(config, shard_id=0)
+    shard_1 = processor_cls(config, shard_id=1)
+
+    first_id_shard_0 = shard_0._next_custom_id("answer", "text")
+    first_id_shard_1 = shard_1._next_custom_id("answer", "text")
+
+    assert first_id_shard_0 == "answer-text-s0-1"
+    assert first_id_shard_1 == "answer-text-s1-1"
+    assert first_id_shard_0 != first_id_shard_1
