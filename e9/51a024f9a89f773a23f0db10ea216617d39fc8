@@ -1,0 +1,25 @@
+src/mmirage/core/process/variables.py
+  s_95bd80318259cc::t_b828f078a8bf88 202-204
+  s_95bd80318259cc::t_0de9f1a968b46b 264,272
+  s_95bd80318259cc::t_3e33557294fc4c 168-171,178-180,184
+  s_95bd80318259cc::t_8009800e175fb0 304,312-314,326,329-332
+  s_95bd80318259cc::t_b5db855a6b1fff 297
+tests/test_variable_environment_row_index.py
+  s_95bd80318259cc::t_19bdb0461b0a74 1-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e951a024f9a89f773a23f0db10ea216617d39fc8",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
