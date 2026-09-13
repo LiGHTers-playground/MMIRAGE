@@ -1,0 +1,20 @@
+docs/batch_api.md
+  s_95bd80318259cc::t_b0bbff4f0fd78b 170-171
+  s_95bd80318259cc::t_0572737e281478 132-133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5c46e19b89c62a90e2463d3088d9378896ba40bf",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
