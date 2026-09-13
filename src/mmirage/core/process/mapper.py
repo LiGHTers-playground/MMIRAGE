@@ -100,12 +100,14 @@ class MMIRAGEMapper:
         self,
         batch: Dict[str, List[Any]],
         image_base_path: Optional[str] = None,
+        indices: Optional[List[int]] = None,
     ) -> List[VariableEnvironment]:
         """Transform a batch of samples by computing output variables.
 
         Args:
             batch: Dictionary mapping column names to lists of values.
             image_base_path: Optional base directory for resolving relative image paths.
+            indices: Dataset positions of the rows, recorded on each environment.
 
         Returns:
             List of VariableEnvironments with all output variables computed.
@@ -115,7 +117,7 @@ class MMIRAGEMapper:
             RuntimeError: If an output variable type has no registered processor.
         """
         batch_environment = VariableEnvironment.from_batch_input_variables(
-            batch, self.input_vars, image_base_path
+            batch, self.input_vars, image_base_path, indices=indices
         )
 
         for idx, output_var in enumerate(self.output_vars):
