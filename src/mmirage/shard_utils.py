@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import humanize
-from datasets import DatasetDict
+from datasets import Dataset, DatasetDict
 
 from mmirage.core.loader.base import BaseDataLoaderConfig, DatasetLike
 
@@ -331,16 +331,27 @@ def _count_rows(ds: DatasetLike) -> int:
     return len(ds)
 
 
+def _shard_split(split_ds: Dataset, num_shards: int, shard_id: int) -> Dataset:
+    """Shard a single dataset, returning an empty dataset for out-of-range shards.
+
+    `Dataset.shard` raises `IndexError` when the dataset has fewer rows than
+    `num_shards` and `shard_id` falls past its last row.
+    """
+    if shard_id >= len(split_ds):
+        return split_ds.select([])
+    return split_ds.shard(num_shards=num_shards, index=shard_id)
+
+
 def _shard_dataset(ds: DatasetLike, num_shards: int, shard_id: int) -> DatasetLike:
     """Shard a dataset or dataset dict."""
     if isinstance(ds, DatasetDict):
         return DatasetDict(
             {
-                split: split_ds.shard(num_shards=num_shards, index=shard_id)
+                split: _shard_split(split_ds, num_shards, shard_id)
                 for split, split_ds in ds.items()
             }
         )
-    return ds.shard(num_shards=num_shards, index=shard_id)
+    return _shard_split(ds, num_shards, shard_id)
 
 
 def _remove_columns(ds: DatasetLike) -> List[str]:
