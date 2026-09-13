@@ -50,7 +50,7 @@ gpu = [
 dev = [
   "ruff>=0.16",
   "pre-commit>=4.0",
-  "mypy>=1.8.0",
+  "pyright>=1.1",
   "ipykernel",
   "pytest",
 ]
@@ -77,3 +77,23 @@ ignore = ["E501"]
 [tool.ruff.lint.per-file-ignores]
 # Sphinx conf.py adjusts sys.path before imports
 "docs/conf.py" = ["E402"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+include = ["src/mmirage"]
+# sglang is not installed in CI; a missing import is a warning, not an error.
+reportMissingImports = "warning"
+reportMissingModuleSource = "warning"
+# Known type errors; later cleanup PRs remove files from this list one at a time.
+ignore = [
+  "src/mmirage/core/process/batch/openai_adapter.py",
+  "src/mmirage/core/process/batch/orchestrator.py",
+  "src/mmirage/core/process/mapper.py",
+  "src/mmirage/core/process/processors/batch_api/batch_api_processor.py",
+  "src/mmirage/core/process/processors/custom/custom_processor.py",
+  "src/mmirage/core/process/processors/image_gen/backends/sglang_backend.py",
+  "src/mmirage/core/process/processors/image_gen/image_gen_processor.py",
+  "src/mmirage/core/process/processors/llm/llm_processor.py",
+  "src/mmirage/shard_process.py",
+]
