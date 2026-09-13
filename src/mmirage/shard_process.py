@@ -10,7 +10,7 @@ import sys
 import traceback
 from typing import Any, Dict, List, Optional
 
-from datasets import DatasetDict
+from datasets import Dataset, DatasetDict
 
 from mmirage.cli_utils.runtime import non_empty_path
 from mmirage.config.utils import load_mmirage_config
@@ -139,6 +139,35 @@ def rewrite_batch(
     return rendered_list
 
 
+def _map_split(
+    split_ds: Dataset,
+    mapper: MMIRAGEMapper,
+    renderer: TemplateRenderer,
+    image_base_path: Optional[str],
+    batch_size: int,
+    remove_columns: bool,
+    desc: str,
+) -> Dataset:
+    """Map one dataset (or one split of a dataset dict) through ``rewrite_batch``.
+
+    Columns are removed per split so a ``DatasetDict`` whose splits have
+    different columns does not fail on a column missing from one of them.
+    """
+    return split_ds.map(
+        rewrite_batch,
+        batched=True,
+        batch_size=batch_size,
+        load_from_cache_file=False,
+        desc=desc,
+        fn_kwargs={
+            "mapper": mapper,
+            "renderer": renderer,
+            "image_base_path": image_base_path,
+        },
+        remove_columns=_remove_columns(split_ds) if remove_columns else [],
+    )
+
+
 def main():
     """
     Process a single shard of the dataset.
@@ -257,30 +286,40 @@ def main():
             ds_processed_all: List[Optional[DatasetLike]] = []
             for ds_idx, ds_shard in enumerate(ds_all_shard):
                 ds_config = datasets_config[ds_idx]
-                if processing_params.remove_columns:
-                    remove_columns = _remove_columns(ds_shard)
-                else:
-                    remove_columns = []
 
                 logger.info(
                     f"Processing dataset {ds_idx} for shard {shard_id}: "
                     f"image_base_path={ds_config.image_base_path}, output_dir={ds_config.output_dir}"
                 )
 
-                ds_processed = ds_shard.map(
-                    rewrite_batch,
-                    batched=True,
-                    batch_size=loading_params.get_batch_size(),
-                    load_from_cache_file=False,
-                    desc=f"Shard {shard_id}/{last_shard_id} dataset {ds_idx}",
-                    fn_kwargs={
-                        "mapper": mapper,
-                        "renderer": renderer,
-                        "image_base_path": ds_config.image_base_path,
-                    },
-                    remove_columns=remove_columns,
-                )
-                # Drain stateful batch accumulators once this dataset map iteration finishes.
+                desc = f"Shard {shard_id}/{last_shard_id} dataset {ds_idx}"
+                ds_processed: DatasetLike
+                if isinstance(ds_shard, DatasetDict):
+                    ds_processed = DatasetDict(
+                        {
+                            split: _map_split(
+                                split_ds,
+                                mapper=mapper,
+                                renderer=renderer,
+                                image_base_path=ds_config.image_base_path,
+                                batch_size=loading_params.get_batch_size(),
+                                remove_columns=processing_params.remove_columns,
+                                desc=f"{desc} split {split}",
+                            )
+                            for split, split_ds in ds_shard.items()
+                        }
+                    )
+                else:
+                    ds_processed = _map_split(
+                        ds_shard,
+                        mapper=mapper,
+                        renderer=renderer,
+                        image_base_path=ds_config.image_base_path,
+                        batch_size=loading_params.get_batch_size(),
+                        remove_columns=processing_params.remove_columns,
+                        desc=desc,
+                    )
+                # Drain stateful batch accumulators once every split of this dataset is mapped.
                 mapper.finalize_processors()
 
                 # A 0-row dataset cannot be cast or saved; None means "nothing to write".

@@ -375,10 +375,12 @@ def _shard_dataset(ds: DatasetLike, num_shards: int, shard_id: int) -> DatasetLi
     return _shard_split(ds, num_shards, shard_id)
 
 
-def _remove_columns(ds: DatasetLike) -> List[str]:
-    """Get columns to remove from dataset if enabled."""
-    if isinstance(ds, DatasetDict):
-        return list(set(x for split_ds in ds.values() for x in split_ds.column_names))
+def _remove_columns(ds: Dataset) -> List[str]:
+    """Get columns to remove from a dataset (or one split of a dataset dict) if enabled.
+
+    Each split of a `DatasetDict` must be mapped with its own column names:
+    `DatasetDict.map(remove_columns=...)` raises when a split lacks a column.
+    """
     return ds.column_names
 
 
