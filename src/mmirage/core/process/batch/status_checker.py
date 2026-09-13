@@ -123,11 +123,6 @@ def check_batches(
         return 0
 
     provider_configs = resolve_provider_configs(records, cfg)
-    if not provider_configs:
-        logger.error(
-            "No supported provider configurations could be built from metadata."
-        )
-        return 1
 
     results = run_status_checker(
         metadata_records=records, provider_configs=provider_configs

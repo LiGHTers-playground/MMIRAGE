@@ -298,7 +298,7 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
 
         placeholders: List[VariableEnvironment] = []
         for i in range(nb_samples):
-            unique_id = index_to_custom_id.get(i, f"unknown-{i}")
+            unique_id = index_to_custom_id[i]
             placeholder = f"__BATCH_SUBMITTED__:{unique_id}"
             placeholders.append(batch[i].with_variable(output_var.name, placeholder))
 

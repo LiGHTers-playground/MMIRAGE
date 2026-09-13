@@ -179,7 +179,9 @@ def _build_output_payload(
             "error_message": error_message,
         }
 
-    raw_content = _extract_content_string(result_row)
+    # Missing content is empty output, not a failure, so an incomplete provider
+    # response does not block the merge.
+    raw_content = str(result_row.get("generated_text", ""))
     if not raw_content:
         return {"caption": ""}
 
@@ -209,15 +211,6 @@ def _build_output_payload(
         }
 
     return {"caption": raw_content}
-
-
-def _extract_content_string(result_row: Mapping[str, Any]) -> str:
-    """Return the generated text payload as a string.
-
-    The collector treats missing content as empty output rather than a hard
-    failure so incomplete provider responses do not block the merge.
-    """
-    return str(result_row.get("generated_text", ""))
 
 
 def collect_batches(
