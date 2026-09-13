@@ -6,7 +6,7 @@ import abc
 import os
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Any, Dict, List, Literal, Optional, Sequence
+from typing import Any, ClassVar, Dict, List, Literal, Optional, Sequence
 
 import jmespath
 from PIL import Image
@@ -69,9 +69,13 @@ class OutputVar(BaseVar):
     Attributes:
         name: Name of the variable.
         type: Type identifier for the processor that generates this variable.
+        available_at_map_time: Whether the value exists while the shard map
+            runs. False for variables that hold a placeholder until a later
+            stage (e.g. `mmirage merge`) fills them in.
     """
 
     type: str = ""
+    available_at_map_time: ClassVar[bool] = True
 
     @abc.abstractmethod
     def is_computable(self, vars: Sequence[BaseVar]) -> bool:
