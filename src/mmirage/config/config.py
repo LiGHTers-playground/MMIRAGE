@@ -1,11 +1,12 @@
 """Configuration dataclasses for MMIRAGE pipeline."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from mmirage.config.loading import LoadingParams
 from mmirage.core.process.base import BaseProcessorConfig
-from mmirage.core.process.variables import InputVar, OutputVar
+from mmirage.core.process.processors.filter.config import FilterStep
+from mmirage.core.process.variables import BaseVar, InputVar, OutputVar
 
 
 @dataclass
@@ -100,6 +101,44 @@ class ProcessingParams:
     output_schema: Dict[str, Any]
     remove_columns: bool = False
     cast_images: bool = True
+
+    def __post_init__(self) -> None:
+        # Outputs are ordered steps: each one may only read the inputs and the
+        # outputs declared before it. Fail at config load rather than in the shard.
+        context: List[BaseVar] = list(self.inputs)
+        for i, output_var in enumerate(self.outputs):
+            if not output_var.is_computable(context):
+                raise ValueError(self._uncomputable_message(i, output_var, context))
+            # A filter step declares no variable of its own.
+            if not isinstance(output_var, FilterStep):
+                context.append(output_var)
+
+    @staticmethod
+    def _uncomputable_message(
+        i: int, output_var: OutputVar, context: List[BaseVar]
+    ) -> str:
+        # Only some steps (e.g. a filter) can say which names they are missing.
+        missing: Set[str] = getattr(output_var, "missing_names", lambda _: set())(
+            context
+        )
+        if missing:
+            return (
+                f"outputs[{i}] '{output_var.name}' references variables not "
+                f"declared before it: {sorted(missing)}"
+            )
+        deferred: Set[str] = getattr(output_var, "deferred_names", lambda _: set())(
+            context
+        )
+        if deferred:
+            names = ", ".join(f"'{v}'" for v in sorted(deferred))
+            return (
+                f"outputs[{i}]: {names} is a batch_api output, "
+                "only available after `mmirage merge`"
+            )
+        context_names = [v.name for v in context]
+        return (
+            f"outputs[{i}] '{output_var.name}' is not computable given {context_names}"
+        )
 
 
 @dataclass
