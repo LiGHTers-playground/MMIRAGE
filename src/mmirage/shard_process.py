@@ -229,6 +229,15 @@ def main():
             f"→ {total_rows} total rows; this logical shard has {shard_rows} rows."
         )
 
+        if shard_rows == 0:
+            # Nothing to process: skip model loading and record an empty success.
+            logger.info(
+                f"Logical shard {shard_id} has no input rows; marking success "
+                "without loading processors."
+            )
+            _mark_success(state_dir, stats=ShardStats(rows_processed=0, rows_written=0))
+            return
+
         mapper = MMIRAGEMapper(
             cfg.processors,
             processing_params.inputs,
