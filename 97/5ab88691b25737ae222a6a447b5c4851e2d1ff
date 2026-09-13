@@ -1,0 +1,34 @@
+tests/test_shard_process_empty.py
+  s_95bd80318259cc::t_9132b9d3bef490 81-82
+tests/test_shard_rewrite.py
+  s_95bd80318259cc::t_5e59befb6bdf02 11
+  s_95bd80318259cc::t_f758a8238cdc70 140,145,153-163
+src/mmirage/shard_process.py
+  s_95bd80318259cc::t_954574f36b00e2 416-417
+  s_95bd80318259cc::t_535d4b204c7dda 133-134,140-141
+  s_95bd80318259cc::t_73849516683672 169
+  s_95bd80318259cc::t_d7a77213c6e36c 318-326
+  s_95bd80318259cc::t_3320949568a5fe 205-210
+  s_95bd80318259cc::t_49030b7128e872 11
+src/mmirage/core/process/mapper.py
+  s_95bd80318259cc::t_b3fd8b28fab2ba 61
+  s_95bd80318259cc::t_0d92c3be730d4a 166-177
+src/mmirage/shard_utils.py
+  s_95bd80318259cc::t_80b7eeb77e71a3 352
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "975ab88691b25737ae222a6a447b5c4851e2d1ff",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
