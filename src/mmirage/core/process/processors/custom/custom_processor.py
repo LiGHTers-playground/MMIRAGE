@@ -47,6 +47,7 @@ class CustomProcessor(BaseProcessor[CustomOutputVar]):
         self._error_count = 0
         self._timeout_count = 0
         self._is_broken = False
+        self._trip_reason = ""
 
         # check user script file existence
         if not os.path.exists(self.config.script_path):
@@ -90,7 +91,7 @@ class CustomProcessor(BaseProcessor[CustomOutputVar]):
 
         if self._is_broken:
             raise RuntimeError(
-                f"CustomProcessor circuit breaker tripped. Max timeouts ({self.config.max_timeouts}) reached."
+                f"Custom processor circuit breaker tripped: {self._trip_reason}"
             )
 
         # to guarantee strict input ordering
@@ -153,13 +154,14 @@ class CustomProcessor(BaseProcessor[CustomOutputVar]):
         Teardown belongs here rather than in ``finalize()``: the latter runs after every
         dataset while the same pool is reused for the next one.
         """
-        if not self._is_broken and hasattr(self, "_pool"):
+        if not self._is_broken:
             self._pool.stop()
             self._pool.join()
 
     def _trip_circuit_breaker(self, reason: str) -> None:
         """Helper to centralize circuit breaker hard-fail logic."""
         self._is_broken = True
+        self._trip_reason = reason
         logger.error(f"Tripping circuit breaker: {reason}")
         self._pool.stop()
         self._pool.join()
