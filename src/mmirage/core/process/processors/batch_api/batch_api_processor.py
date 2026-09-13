@@ -105,6 +105,7 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
                 ),
             ),
             export_prompts_path=export_prompts_path,
+            shard_id=self.shard_id,
             export_batch_prefix="text-",
         )
         self._multimodal_orchestrator = BatchSubmissionOrchestrator(
@@ -119,6 +120,7 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
                 ),
             ),
             export_prompts_path=export_prompts_path,
+            shard_id=self.shard_id,
             export_batch_prefix="multimodal-",
         )
 
