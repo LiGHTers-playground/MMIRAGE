@@ -58,6 +58,7 @@ class MMIRAGEMapper:
         filter_indices = [
             i for i, v in enumerate(output_vars) if isinstance(v, FilterStep)
         ]
+        self.has_filter = bool(filter_indices)
         self.rows_seen: Dict[int, int] = {i: 0 for i in filter_indices}
         self.rows_filtered: Dict[int, int] = {i: 0 for i in filter_indices}
         self.rows_dropped_by_error: Dict[int, int] = {i: 0 for i in filter_indices}
@@ -161,6 +162,18 @@ class MMIRAGEMapper:
     def total_rows_dropped_by_error(self) -> int:
         """Rows whose filter predicate raised, summed over all filter steps."""
         return sum(self.rows_dropped_by_error.values())
+
+    def filter_summary(self) -> List[str]:
+        """One line per filter step with the rows it saw, rejected, and errored on."""
+        lines: List[str] = []
+        for idx, seen in self.rows_seen.items():
+            step = cast(FilterStep, self.output_vars[idx])
+            lines.append(
+                f"Filter step outputs[{idx}] ({step.predicate!r}): {seen} rows in, "
+                f"{self.rows_filtered[idx]} filtered, "
+                f"{self.rows_dropped_by_error[idx]} dropped by error"
+            )
+        return lines
 
     def check_filter_errors(self) -> None:
         """Fail when a filter step's predicate raised on every row it saw.

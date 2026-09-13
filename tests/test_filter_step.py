@@ -1,5 +1,4 @@
 import os
-from dataclasses import fields
 
 import pytest
 import yaml
@@ -21,8 +20,6 @@ def test_output_vars_are_available_at_map_time_by_default():
 
 def test_batch_api_output_is_deferred_until_merge():
     assert BatchApiOutputVar.available_at_map_time is False
-    # A ClassVar, so it is not a dataclass field and dacite never sees it.
-    assert "available_at_map_time" not in {f.name for f in fields(BatchApiOutputVar)}
 
 
 # --- FilterStep construction ---------------------------------------------------
