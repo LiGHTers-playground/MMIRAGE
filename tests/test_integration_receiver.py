@@ -61,7 +61,7 @@ def test_integration_receiver_reads_receipt_and_writes_merged_output(
         lambda config: FakeAdapter(),
     )
 
-    records = _read_metadata_records(str(metadata_path))
+    records = _read_metadata_records([str(metadata_path)])
     rows = collect_and_merge(
         records=records,
         provider_configs={"openai": OpenAIBatchConfig()},

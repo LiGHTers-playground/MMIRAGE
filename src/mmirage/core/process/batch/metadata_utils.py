@@ -51,15 +51,8 @@ class BatchMetadataRecord:
         )
 
 
-def _normalize_metadata_paths(metadata_paths: str | Sequence[str]) -> List[str]:
-    """Return metadata paths as a concrete list."""
-    if isinstance(metadata_paths, str):
-        return [metadata_paths]
-    return list(metadata_paths)
-
-
 def _read_metadata_records(
-    metadata_output_paths: str | Sequence[str],
+    metadata_output_paths: Sequence[str],
 ) -> List[BatchMetadataRecord]:
     """Load valid JSON objects from one or more receipt files.
 
@@ -68,7 +61,7 @@ def _read_metadata_records(
     converted into typed records with required provider identifiers.
     """
     records: List[BatchMetadataRecord] = []
-    for metadata_output_path in _normalize_metadata_paths(metadata_output_paths):
+    for metadata_output_path in metadata_output_paths:
         with open(metadata_output_path, "r", encoding="utf-8") as f:
             for line in f:
                 raw = line.strip()
