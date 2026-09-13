@@ -613,3 +613,69 @@ def test_openai_retrieve_results_uses_error_file_when_output_missing(monkeypatch
             "error_message": "Unrecognized request argument supplied: expected_schema",
         }
     ]
+
+
+def test_openai_retrieve_results_reads_output_and_error_files(monkeypatch):
+    from mmirage.core.process.batch.openai_adapter import OpenAIBatchAdapter
+
+    class FakeBatches:
+        def retrieve(self, provider_batch_id):
+            class _RetrieveResp:
+                id = provider_batch_id
+                status = "completed"
+                output_file_id = "file_output_1"
+                error_file_id = "file_error_1"
+
+            return _RetrieveResp()
+
+    captured = {"file_ids": []}
+
+    class FakeClient:
+        def __init__(self, **kwargs):
+            self.batches = FakeBatches()
+
+            class _Files:
+                def content(self, file_id):
+                    captured["file_ids"].append(file_id)
+
+                    class _ContentResp:
+                        text = {
+                            "file_output_1": (
+                                '{"custom_id":"c1","response":{"body":{"text":"A"}}}\n'
+                            ),
+                            "file_error_1": (
+                                '{"custom_id":"c2","response":{"body":{"error":{'
+                                '"message":"Unrecognized request argument supplied: expected_schema"}}}}\n'
+                            ),
+                        }[file_id]
+
+                    return _ContentResp()
+
+            self.files = _Files()
+
+    monkeypatch.setattr(
+        "mmirage.core.process.batch.openai_adapter.OpenAI",
+        FakeClient,
+    )
+
+    config = OpenAIBatchConfig()
+    adapter = OpenAIBatchAdapter()
+
+    rows = adapter.retrieve_results(provider_batch_id="batch_abc", config=config)
+
+    assert captured["file_ids"] == ["file_output_1", "file_error_1"]
+    assert len(rows) == 2
+    assert rows[0]["custom_id"] == "c1"
+    assert rows[0]["generated_text"] == "A"
+    assert rows[1] == {
+        "custom_id": "c2",
+        "response": {
+            "body": {
+                "error": {
+                    "message": "Unrecognized request argument supplied: expected_schema"
+                }
+            }
+        },
+        "status": "error",
+        "error_message": "Unrecognized request argument supplied: expected_schema",
+    }
