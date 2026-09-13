@@ -1,0 +1,35 @@
+src/mmirage/shard_utils.py
+  s_95bd80318259cc::t_a2d0091577a8a5 339-354
+tests/test_shard_utils.py
+  s_95bd80318259cc::t_add12f6d356ffa 1,3-7
+  s_95bd80318259cc::t_17c43251f8fe0f 30-55
+tests/test_shard_process_empty.py
+  s_95bd80318259cc::t_a85b3d6bb86140 25-31
+  s_95bd80318259cc::t_9c9d3bc7c32096 83-103
+  s_95bd80318259cc::t_e00e41fdffa793 47-48
+  s_95bd80318259cc::t_06db2599828b72 11
+src/mmirage/shard_process.py
+  s_95bd80318259cc::t_ad9d6fa723fa6f 286-296
+  s_95bd80318259cc::t_47e39dea72a3f7 319-320
+  s_95bd80318259cc::t_6f561e4c44d4c4 28
+  s_95bd80318259cc::t_ed08b7d06c3793 257
+src/mmirage/merge_shards.py
+  s_95bd80318259cc::t_bd44d677d37c95 121-123
+  s_95bd80318259cc::t_a1f9aaaa5f6641 87-91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e0e28698e4716aeea9bfbae0d07cf10409e682f7",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
