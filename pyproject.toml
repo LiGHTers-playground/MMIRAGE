@@ -51,6 +51,8 @@ dev = [
   "ruff>=0.16",
   "pre-commit>=4.0",
   "mypy>=1.8.0",
+  "types-PyYAML",
+  "types-jmespath",
   "ipykernel",
   "pytest",
 ]
@@ -77,3 +79,33 @@ ignore = ["E501"]
 [tool.ruff.lint.per-file-ignores]
 # Sphinx conf.py adjusts sys.path before imports
 "docs/conf.py" = ["E402"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src/mmirage"]
+warn_unused_ignores = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = ["datasets", "sglang", "sglang.*"]
+ignore_missing_imports = true
+
+# Known type errors; later cleanup PRs remove modules from this list one at a time.
+[[tool.mypy.overrides]]
+module = [
+  "mmirage.cli",
+  "mmirage.core.loader.base",
+  "mmirage.core.loader.jsonl",
+  "mmirage.core.loader.utils",
+  "mmirage.core.process.base",
+  "mmirage.core.process.batch.collector",
+  "mmirage.core.process.batch.openai_adapter",
+  "mmirage.core.process.batch.orchestrator",
+  "mmirage.core.process.processors.batch_api.batch_api_processor",
+  "mmirage.core.process.processors.custom.custom_processor",
+  "mmirage.core.process.processors.image_gen.backends.base",
+  "mmirage.core.process.processors.image_gen.backends.sglang_backend",
+  "mmirage.core.process.processors.image_gen.image_gen_processor",
+  "mmirage.core.process.processors.llm.llm_processor",
+]
+ignore_errors = true

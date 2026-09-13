@@ -89,6 +89,8 @@ Type-check with mypy:
 mypy src/mmirage/
 ```
 
+mypy also runs in CI on every pull request. Modules listed under `ignore_errors` in `pyproject.toml` are known type debt being removed one module at a time; a new module must be clean.
+
 ---
 
 ## Project Structure Conventions
