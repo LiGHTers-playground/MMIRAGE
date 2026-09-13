@@ -1,13 +1,15 @@
-"""Provider-agnostic batch processing contracts and registry."""
+"""Provider-agnostic batch processing contracts and registry.
 
-from mmirage.config.openai_batch import OpenAIBatchConfig
+Adapters are reached through the registry's lazy bootstrap only, so importing
+this package never imports a provider SDK.
+"""
+
 from mmirage.core.process.batch.adapter import (
     BatchSubmissionAdapter,
     BatchSubmissionResult,
 )
 from mmirage.core.process.batch.chunking import BatchRequestChunker, RequestChunk
 from mmirage.core.process.batch.collector import collect_and_merge
-from mmirage.core.process.batch.openai_adapter import OpenAIBatchAdapter
 from mmirage.core.process.batch.orchestrator import BatchSubmissionOrchestrator
 from mmirage.core.process.batch.registry import (
     BatchAdapterRegistry,
@@ -24,8 +26,6 @@ __all__ = [
     "BatchRequestChunker",
     "RequestChunk",
     "BatchSubmissionOrchestrator",
-    "OpenAIBatchAdapter",
-    "OpenAIBatchConfig",
     "BatchAdapterRegistry",
     "extract_unique_provider_batches",
     "run_status_checker",
