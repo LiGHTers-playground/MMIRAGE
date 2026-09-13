@@ -1,0 +1,19 @@
+src/mmirage/config/utils.py
+  s_95bd80318259cc::t_06f1e17492ff39 17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4abc5cb9e6967acd8d35ce8c3addad5e70a9ab60",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
