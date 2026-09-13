@@ -1,0 +1,28 @@
+tests/test_processing_params_validation.py
+  s_95bd80318259cc::t_3e51c545c8faa5 1-33,37-54,72-85
+  s_95bd80318259cc::t_b4a3b195dc77be 55-71
+  s_95bd80318259cc::t_c545290a7e199a 34-36
+src/mmirage/config/config.py
+  s_95bd80318259cc::t_84f9bab2e96334 105-119,124-128,132-139,141-142
+  s_95bd80318259cc::t_bc992ac10cbee2 120-123
+  s_95bd80318259cc::t_4031cde8d79b10 129-131
+  s_95bd80318259cc::t_48118b19762820 4
+  s_95bd80318259cc::t_f5ccb7b7f53ec1 8-9
+  s_95bd80318259cc::t_c545290a7e199a 140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "1b948dd3bdd55815053a424888fdb9d055dbf359",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
