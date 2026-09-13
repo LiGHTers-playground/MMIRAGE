@@ -76,7 +76,10 @@ or absolute file paths, using `image_base_path` if set.
 ## Output variables
 
 An **output variable** is the result of running the processor on a prompt.
-Output variables are defined in `processing_params.outputs`.
+Output variables are defined in `processing_params.outputs`, an ordered list
+of steps: each step may reference the inputs and the outputs declared before
+it. A `filter` step is the one entry that produces no variable; it drops rows
+instead (see [Configuration](configuration.md#filter-step)).
 
 Each output variable specifies:
 
@@ -165,7 +168,9 @@ in which case all original fields are kept alongside the new outputs.
 ## Processor
 
 A **processor** is the component that computes an output variable.
-Each entry in `processing_params.outputs` names a processor via its `type`.
+Each entry in `processing_params.outputs` names a processor via its `type`,
+except `filter`, which is a step in the list rather than a processor and runs
+in the mapper itself.
 
 - **`llm`** — starts an SGLang engine on the current machine (or SLURM node).
 - **`image_gen`** — starts a Diffusers pipeline for text-to-image generation on the current machine (or SLURM node).
