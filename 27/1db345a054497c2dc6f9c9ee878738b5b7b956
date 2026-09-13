@@ -1,0 +1,39 @@
+src/mmirage/shard_utils.py
+  s_95bd80318259cc::t_23628052a63eed 83-84
+  s_95bd80318259cc::t_b18642982d6b32 41-42,45-46
+  s_95bd80318259cc::t_aafe2973088099 138-139
+src/mmirage/shard_process.py
+  s_95bd80318259cc::t_9066fbb0d989b8 384-388,391
+src/mmirage/cli_utils/status.py
+  s_95bd80318259cc::t_bab13737f75647 215-222
+  s_95bd80318259cc::t_785487f077f5e9 298-300
+  s_95bd80318259cc::t_6f36ce25e629b1 183-186
+README.md
+  s_95bd80318259cc::t_eec375909813b3 499-501
+  s_95bd80318259cc::t_4896161c801272 519-521
+tests/test_shard_process_empty.py
+  s_95bd80318259cc::t_6852a484d15221 116
+  s_95bd80318259cc::t_add7b80e660613 146-147
+tests/test_status_stats.py
+  s_95bd80318259cc::t_b23e2883e25d55 1-80
+docs/cli.md
+  s_95bd80318259cc::t_9514d5f09766c2 189-190
+  s_95bd80318259cc::t_0b82673b458506 173-175
+  s_95bd80318259cc::t_4a482bad20089a 157-159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "271db345a054497c2dc6f9c9ee878738b5b7b956",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
