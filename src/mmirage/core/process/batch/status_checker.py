@@ -22,7 +22,7 @@ from mmirage.core.process.batch.provider_resolution import resolve_provider_conf
 if TYPE_CHECKING:
     from mmirage.config.config import MMirageConfig
 
-from mmirage.core.process.batch.registry import BatchAdapterFactory
+from mmirage.core.process.batch.registry import BatchAdapterRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ def run_status_checker(
         metadata_records
     ):
         config = provider_configs[provider]
-        adapter = BatchAdapterFactory.from_config(config)
+        adapter = BatchAdapterRegistry.create(config)
         provider_counts = counter.setdefault(provider, {})
 
         try:

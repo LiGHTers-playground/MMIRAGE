@@ -11,7 +11,6 @@ from mmirage.core.process.batch.provider_resolution import (
     resolve_single_provider_config,
 )
 from mmirage.core.process.batch.registry import (
-    BatchAdapterFactory,
     BatchAdapterRegistry,
 )
 
@@ -119,7 +118,7 @@ def test_factory_resolves_registered_provider():
     BatchAdapterRegistry.register("unit", CompleteTestAdapter)
     config = BatchProviderConfig(provider="unit")
 
-    adapter = BatchAdapterFactory.from_config(config)
+    adapter = BatchAdapterRegistry.create(config)
 
     assert isinstance(adapter, CompleteTestAdapter)
 
@@ -128,7 +127,7 @@ def test_factory_raises_for_unknown_provider():
     config = BatchProviderConfig(provider="not-registered")
 
     with pytest.raises(ValueError, match="Unknown batch provider"):
-        BatchAdapterFactory.from_config(config)
+        BatchAdapterRegistry.create(config)
 
 
 def test_factory_raises_when_credential_env_var_is_missing(monkeypatch):
@@ -137,7 +136,7 @@ def test_factory_raises_when_credential_env_var_is_missing(monkeypatch):
     config = BatchProviderConfig(provider="unit")
 
     with pytest.raises(ValueError, match="UNIT_API_KEY"):
-        BatchAdapterFactory.from_config(config)
+        BatchAdapterRegistry.create(config)
 
 
 def test_factory_creates_adapter_when_credential_env_var_is_set(monkeypatch):
@@ -145,7 +144,7 @@ def test_factory_creates_adapter_when_credential_env_var_is_set(monkeypatch):
     monkeypatch.setenv("UNIT_API_KEY", "from-env")
     config = BatchProviderConfig(provider="unit")
 
-    assert isinstance(BatchAdapterFactory.from_config(config), CredentialedTestAdapter)
+    assert isinstance(BatchAdapterRegistry.create(config), CredentialedTestAdapter)
 
 
 def test_resolve_single_provider_config_raises_for_missing_provider():

@@ -57,7 +57,7 @@ def test_integration_receiver_reads_receipt_and_writes_merged_output(
             ]
 
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: FakeAdapter(),
     )
 

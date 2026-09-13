@@ -13,7 +13,7 @@ from PIL import Image
 
 from mmirage.core.process.base import BaseProcessor, ProcessorRegistry, TokenCounts
 from mmirage.core.process.batch.orchestrator import BatchSubmissionOrchestrator
-from mmirage.core.process.batch.registry import BatchAdapterFactory
+from mmirage.core.process.batch.registry import BatchAdapterRegistry
 from mmirage.core.process.processors.batch_api.config import (
     BATCH_API_PROCESSOR_TYPE,
     BatchApiOutputVar,
@@ -80,7 +80,7 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
         # When export_prompts_dir is set we are in dry-run mode and should not
         # require valid provider credentials because no network calls will be
         # performed.
-        self._batch_adapter = BatchAdapterFactory.from_config(
+        self._batch_adapter = BatchAdapterRegistry.create(
             provider_cfg, allow_missing_credentials=bool(export_prompts_dir)
         )
         self._batch_request_counter = 0
