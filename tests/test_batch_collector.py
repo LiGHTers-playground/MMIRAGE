@@ -85,7 +85,7 @@ def test_collect_and_merge_reconstructs_rows_deterministically(
 
     fake_adapter = FakeAdapter()
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: fake_adapter,
     )
 
@@ -143,7 +143,7 @@ def test_collect_and_merge_carries_provider_usage(tmp_path, monkeypatch):
             ]
 
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: FakeAdapter(),
     )
 
@@ -225,7 +225,7 @@ def test_collect_and_merge_outputs_caption_for_plain_text_content(
             ]
 
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: FakeAdapter(),
     )
 
@@ -290,7 +290,7 @@ def test_collect_and_merge_keeps_newest_receipt_for_retried_rows(tmp_path, monke
             return [{"custom_id": "answer-text-s0-1", "generated_text": text}]
 
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: UnitAdapter(),
     )
 
@@ -370,7 +370,7 @@ def test_collect_and_merge_orders_rows_by_shard_then_source_index(
             ]
 
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: UnitAdapter(),
     )
 
@@ -437,7 +437,7 @@ def test_collect_and_merge_uses_openai_adapter_generated_text(tmp_path, monkeypa
         FakeClient,
     )
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: OpenAIBatchAdapter(),
     )
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
@@ -727,7 +727,7 @@ def test_collect_and_merge_routes_multiple_providers(tmp_path, monkeypatch):
     }
 
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: adapters[config.provider],
     )
 
@@ -819,7 +819,7 @@ def test_collect_and_merge_keeps_one_row_per_position(tmp_path, monkeypatch):
             ]
 
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: FakeAdapter(),
     )
 

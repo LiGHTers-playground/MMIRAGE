@@ -12,7 +12,7 @@ from mmirage.core.process.batch.anthropic_adapter import AnthropicBatchAdapter
 from mmirage.core.process.batch.provider_resolution import (
     resolve_single_provider_config,
 )
-from mmirage.core.process.batch.registry import BatchAdapterFactory
+from mmirage.core.process.batch.registry import BatchAdapterRegistry
 
 
 @pytest.fixture(autouse=True)
@@ -440,4 +440,4 @@ def test_factory_raises_when_anthropic_api_key_env_var_is_missing(monkeypatch):
 
     with pytest.raises(ValueError, match="ANTHROPIC_API_KEY"):
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-        BatchAdapterFactory.from_config(AnthropicBatchConfig())
+        BatchAdapterRegistry.create(AnthropicBatchConfig())

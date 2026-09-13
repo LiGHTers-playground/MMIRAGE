@@ -31,7 +31,7 @@ from mmirage.core.process.batch.metadata_utils import (
     _read_metadata_records,
 )
 from mmirage.core.process.batch.provider_resolution import resolve_provider_configs
-from mmirage.core.process.batch.registry import BatchAdapterFactory
+from mmirage.core.process.batch.registry import BatchAdapterRegistry
 
 if TYPE_CHECKING:
     from mmirage.config.config import MMirageConfig
@@ -112,9 +112,7 @@ def collect_and_merge(
             raise ValueError(f"No provider config found for '{provider}'.")
 
         if provider not in adapters:
-            adapters[provider] = BatchAdapterFactory.from_config(
-                provider_configs[provider]
-            )
+            adapters[provider] = BatchAdapterRegistry.create(provider_configs[provider])
 
         pair = (provider, provider_batch_id)
         pair_to_results[pair] = adapters[provider].retrieve_results(

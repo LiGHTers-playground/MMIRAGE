@@ -66,7 +66,7 @@ def test_run_status_checker_prints_summary_with_factory_dispatch(tmp_path, monke
     fake_adapter = FakeAdapter()
 
     monkeypatch.setattr(
-        "mmirage.core.process.batch.status_checker.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.status_checker.BatchAdapterRegistry.create",
         lambda config: fake_adapter,
     )
 
