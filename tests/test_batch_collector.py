@@ -238,6 +238,7 @@ def test_collect_and_merge_outputs_caption_for_plain_text_content(
 
     assert rows == [
         {
+            "shard_id": 0,
             "source_index": 0,
             "custom_id": "img_1",
             "caption": "A black cat sitting on a sofa.",
@@ -245,30 +246,34 @@ def test_collect_and_merge_outputs_caption_for_plain_text_content(
     ]
 
 
-def test_collect_and_merge_keeps_rows_with_duplicate_custom_ids_across_batches(
-    tmp_path, monkeypatch
-):
+def test_collect_and_merge_keeps_newest_receipt_for_retried_rows(tmp_path, monkeypatch):
     from mmirage.core.process.batch.collector import (
         _read_metadata_records,
         collect_and_merge,
     )
 
+    # A retried shard resubmits the same rows under new batch ids; the retry
+    # receipt is listed first so submission time, not file order, must decide.
     metadata_path = tmp_path / "receipts.jsonl"
     metadata_path.write_text(
         "\n".join(
             [
                 json.dumps(
                     {
-                        "provider": "openai",
-                        "provider_batch_id": "batch_openai",
-                        "custom_id_to_source_index": {"shared": 0},
+                        "provider": "unit",
+                        "shard_id": 0,
+                        "provider_batch_id": "batch_retry",
+                        "custom_id_to_source_index": {"answer-text-s0-1": 0},
+                        "submitted_at_utc": "2026-09-13T11:00:00+00:00",
                     }
                 ),
                 json.dumps(
                     {
                         "provider": "unit",
-                        "provider_batch_id": "batch_unit",
-                        "custom_id_to_source_index": {"shared": 1},
+                        "shard_id": 0,
+                        "provider_batch_id": "batch_first",
+                        "custom_id_to_source_index": {"answer-text-s0-1": 0},
+                        "submitted_at_utc": "2026-09-13T10:00:00+00:00",
                     }
                 ),
             ]
@@ -277,45 +282,111 @@ def test_collect_and_merge_keeps_rows_with_duplicate_custom_ids_across_batches(
         encoding="utf-8",
     )
 
-    output_path = tmp_path / "merged_duplicates.jsonl"
-
-    class OpenAIAdapter:
-        def retrieve_results(self, provider_batch_id, config):
-            return [{"custom_id": "shared", "generated_text": "openai"}]
+    output_path = tmp_path / "merged_retry.jsonl"
 
     class UnitAdapter:
         def retrieve_results(self, provider_batch_id, config):
-            return [{"custom_id": "shared", "generated_text": "unit"}]
-
-    adapters = {
-        "openai": OpenAIAdapter(),
-        "unit": UnitAdapter(),
-    }
+            text = {"batch_first": "first", "batch_retry": "retry"}[provider_batch_id]
+            return [{"custom_id": "answer-text-s0-1", "generated_text": text}]
 
     monkeypatch.setattr(
         "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
-        lambda config: adapters[config.provider],
+        lambda config: UnitAdapter(),
     )
 
     records = _read_metadata_records(str(metadata_path))
     rows = collect_and_merge(
         records=records,
-        provider_configs={
-            "openai": SimpleNamespace(provider="openai"),
-            "unit": SimpleNamespace(provider="unit"),
-        },
+        provider_configs={"unit": SimpleNamespace(provider="unit")},
         output_path=str(output_path),
     )
 
-    assert [row["source_index"] for row in rows] == [0, 1]
-    assert [row["custom_id"] for row in rows] == ["shared", "shared"]
-    assert [row["caption"] for row in rows] == ["openai", "unit"]
+    assert rows == [
+        {
+            "shard_id": 0,
+            "source_index": 0,
+            "custom_id": "answer-text-s0-1",
+            "caption": "retry",
+        }
+    ]
 
     written = [
         json.loads(line)
         for line in output_path.read_text(encoding="utf-8").splitlines()
     ]
     assert written == rows
+
+
+def test_collect_and_merge_orders_rows_by_shard_then_source_index(
+    tmp_path, monkeypatch
+):
+    from mmirage.core.process.batch.collector import (
+        _read_metadata_records,
+        collect_and_merge,
+    )
+
+    # Every shard counts its rows from 0, and shard 1 is listed first.
+    metadata_path = tmp_path / "receipts.jsonl"
+    metadata_path.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "provider": "unit",
+                        "shard_id": 1,
+                        "provider_batch_id": "batch_shard_1",
+                        "custom_id_to_source_index": {
+                            "answer-text-s1-1": 0,
+                            "answer-text-s1-2": 1,
+                        },
+                    }
+                ),
+                json.dumps(
+                    {
+                        "provider": "unit",
+                        "shard_id": 0,
+                        "provider_batch_id": "batch_shard_0",
+                        "custom_id_to_source_index": {
+                            "answer-text-s0-1": 0,
+                            "answer-text-s0-2": 1,
+                        },
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    class UnitAdapter:
+        def retrieve_results(self, provider_batch_id, config):
+            shard = provider_batch_id.removeprefix("batch_shard_")
+            return [
+                {
+                    "custom_id": f"answer-text-s{shard}-{n}",
+                    "generated_text": f"s{shard}-{n}",
+                }
+                for n in (1, 2)
+            ]
+
+    monkeypatch.setattr(
+        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        lambda config: UnitAdapter(),
+    )
+
+    rows = collect_and_merge(
+        records=_read_metadata_records(str(metadata_path)),
+        provider_configs={"unit": SimpleNamespace(provider="unit")},
+        output_path=str(tmp_path / "merged_shards.jsonl"),
+    )
+
+    assert [(row["shard_id"], row["source_index"]) for row in rows] == [
+        (0, 0),
+        (0, 1),
+        (1, 0),
+        (1, 1),
+    ]
+    assert [row["caption"] for row in rows] == ["s0-1", "s0-2", "s1-1", "s1-2"]
 
 
 def test_collect_and_merge_uses_openai_adapter_generated_text(tmp_path, monkeypatch):
@@ -380,6 +451,7 @@ def test_collect_and_merge_uses_openai_adapter_generated_text(tmp_path, monkeypa
 
     assert rows == [
         {
+            "shard_id": 0,
             "source_index": 0,
             "custom_id": "o1",
             "conversations": [
@@ -716,7 +788,7 @@ def test_collector_main_raises_for_invalid_batch_provider_config(
     assert "batch_endpoint must start with '/'" in caplog.text
 
 
-def test_collect_and_merge_tiebreaker_secondary_sort_key(tmp_path, monkeypatch):
+def test_collect_and_merge_keeps_one_row_per_position(tmp_path, monkeypatch):
     from mmirage.core.process.batch.collector import (
         _read_metadata_records,
         collect_and_merge,
@@ -739,8 +811,7 @@ def test_collect_and_merge_tiebreaker_secondary_sort_key(tmp_path, monkeypatch):
 
     class FakeAdapter:
         def retrieve_results(self, provider_batch_id, config):
-            # Return rows intentionally out-of-order to ensure collector sorts
-            # deterministically using the secondary key.
+            # Rows come back out of order; a and b both claim source row 0.
             return [
                 {"custom_id": "b", "generated_text": "B"},
                 {"custom_id": "a", "generated_text": "A"},
@@ -759,7 +830,9 @@ def test_collect_and_merge_tiebreaker_secondary_sort_key(tmp_path, monkeypatch):
         output_path=str(output_path),
     )
 
-    assert [r["custom_id"] for r in rows] == ["a", "b", "c"]
+    # Same receipt, so the row read last wins the shared position.
+    assert [r["source_index"] for r in rows] == [0, 1]
+    assert [r["custom_id"] for r in rows] == ["a", "c"]
 
 
 def test_build_output_payload_logs_malformed_json(caplog):
