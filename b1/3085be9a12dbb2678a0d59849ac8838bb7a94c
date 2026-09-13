@@ -1,0 +1,19 @@
+tests/test_batch_provider_resolution.py
+  s_95bd80318259cc::t_df2062155afdbb 1-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b13085be9a12dbb2678a0d59849ac8838bb7a94c",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
