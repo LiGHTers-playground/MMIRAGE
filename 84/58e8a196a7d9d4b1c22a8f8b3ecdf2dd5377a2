@@ -1,0 +1,21 @@
+tests/test_openai_batch_adapter.py
+  s_95bd80318259cc::t_37561214a21929 616-681
+src/mmirage/core/process/batch/openai_adapter.py
+  s_95bd80318259cc::t_d02e0b4ac854c6 188-192,198-216
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8458e8a196a7d9d4b1c22a8f8b3ecdf2dd5377a2",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
