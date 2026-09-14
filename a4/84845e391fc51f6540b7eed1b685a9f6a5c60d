@@ -1,0 +1,38 @@
+tests/batch_fixtures.py
+  s_95bd80318259cc::t_e8d6a43ed609da 56-64
+  s_95bd80318259cc::t_a60e8e9fe45fb6 10-12
+tests/test_integration_receiver.py
+  s_95bd80318259cc::t_c7b11af0063836 64
+tests/test_batch_status_checker.py
+  s_95bd80318259cc::t_c56526a629301b 233-235,275-277
+  s_95bd80318259cc::t_6b95b31f189322 28-30
+  s_95bd80318259cc::t_2022087a4cfbac 78,117,165,197
+src/mmirage/core/process/batch/metadata_utils.py
+  s_95bd80318259cc::t_4b4a4280238517 55,64
+src/mmirage/core/process/batch/provider_resolution.py
+  s_95bd80318259cc::t_161dd9a81391cc 92-93
+  s_95bd80318259cc::t_5953f02fd5f899 112,116
+  s_95bd80318259cc::t_024aeb973ba753 54
+tests/test_batch_collector.py
+  s_95bd80318259cc::t_b96b6deeac6105 95,154,186,234,299,380,447,493,649,702-703,707,829
+  s_95bd80318259cc::t_f85528852373ce 553-555,603-605
+  s_95bd80318259cc::t_6b95b31f189322 667-669,749
+  s_95bd80318259cc::t_a3e3ccfaef8701 4-5
+  s_95bd80318259cc::t_3fe9030e9be1b1 770-771,774-775,791
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a484845e391fc51f6540b7eed1b685a9f6a5c60d",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,81 @@
+pyproject.toml
+  s_95bd80318259cc::t_b9045ad0eb575d 99
+  s_95bd80318259cc::t_73dbea7042de23 80
+docs/developer.md
+  s_95bd80318259cc::t_b9045ad0eb575d 93
+.github/workflows/tests.yml
+  s_95bd80318259cc::t_b9045ad0eb575d 35,37-51
+tests/test_cli_run_local.py
+  s_95bd80318259cc::t_8b5070e7d49100 9
+  s_95bd80318259cc::t_00179863150034 1-8,10-38
+src/mmirage/cli.py
+  s_95bd80318259cc::t_59444f98be2d6b 64
+tests/test_openai_batch_adapter.py
+  s_95bd80318259cc::t_37561214a21929 615-680
+  s_95bd80318259cc::t_9f6917d527c04e 224
+src/mmirage/core/process/batch/openai_adapter.py
+  s_95bd80318259cc::t_d02e0b4ac854c6 188-192,198-216
+tests/test_batch_api_processor_export.py
+  s_95bd80318259cc::t_113e6621c0c2e2 4
+  s_95bd80318259cc::t_161be31d49e09e 124-152
+  s_95bd80318259cc::t_9246da91da7ac4 102-103,120-121
+  s_95bd80318259cc::t_9ff8b7bd120d1f 153-174
+src/mmirage/core/process/processors/batch_api/batch_api_processor.py
+  s_95bd80318259cc::t_b48240079b9e6e 71-76
+  s_95bd80318259cc::t_f3b1469ae84486 160
+  s_95bd80318259cc::t_ec6ec4881a168b 161-163
+  s_95bd80318259cc::t_1ffd5b9c9b1718 108,123
+  s_95bd80318259cc::t_9f6917d527c04e 16,83
+src/mmirage/core/process/batch/orchestrator.py
+  s_95bd80318259cc::t_6e722da987a3fc 222
+  s_95bd80318259cc::t_4a0669c85f6630 35,39
+tests/test_batch_orchestrator.py
+  s_95bd80318259cc::t_222b3c5cdb12c5 83-121
+tests/test_batch_collector.py
+  s_95bd80318259cc::t_2589c6eb79e29b 7-20
+  s_95bd80318259cc::t_55c9912bd44286 241,454
+  s_95bd80318259cc::t_9a960ed5bb7c5b 255-256,263-267,273-276,285,289-290,294,300,304-311,320-372,374-389
+  s_95bd80318259cc::t_8b03d0a86b519f 249
+  s_95bd80318259cc::t_5739c769aae077 791,814,833-835
+  s_95bd80318259cc::t_71d764a9506c21 390-391
+  s_95bd80318259cc::t_9f6917d527c04e 88,146,228,293,373,440,730,822
+src/mmirage/core/process/batch/metadata_utils.py
+  s_95bd80318259cc::t_e9c3e725762735 20,39-44,49
+  s_95bd80318259cc::t_484c283841b97e 50
+  s_95bd80318259cc::t_0172f0da503782 21-22,28
+src/mmirage/core/process/batch/collector.py
+  s_95bd80318259cc::t_b3e5ceee4da5ed 47-49,70-84,90,105
+  s_95bd80318259cc::t_a4b17016de8455 123-125,127,139-140,146-149,151-152,154-155
+  s_95bd80318259cc::t_af9ad63ea8a960 1,5-7
+  s_95bd80318259cc::t_9f6917d527c04e 34
+  s_95bd80318259cc::t_6dc8b37749f8ea 115
+docs/batch_api.md
+  s_95bd80318259cc::t_b0bbff4f0fd78b 170-171
+  s_95bd80318259cc::t_0572737e281478 132-133
+tests/test_anthropic_batch_adapter.py
+  s_95bd80318259cc::t_9f6917d527c04e 15,443
+tests/test_batch_adapter_contracts.py
+  s_95bd80318259cc::t_9f6917d527c04e 121,130,139,147
+tests/test_integration_receiver.py
+  s_95bd80318259cc::t_9f6917d527c04e 60
+tests/test_batch_status_checker.py
+  s_95bd80318259cc::t_9f6917d527c04e 69
+src/mmirage/core/process/batch/status_checker.py
+  s_95bd80318259cc::t_9f6917d527c04e 25,71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "10dad35a32a0649c74f4ee7d462ce6d078c5c053",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
