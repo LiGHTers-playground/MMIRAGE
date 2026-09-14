@@ -1,0 +1,29 @@
+.github/workflows/tests.yml
+  s_95bd80318259cc::t_24eebb0d9b716d 36
+  s_95bd80318259cc::t_83c1aa93e440e2 52-53
+  s_95bd80318259cc::t_b9045ad0eb575d 35,37-51
+docs/developer.md
+  s_95bd80318259cc::t_58d5e84f37399e 86,89,92
+  s_95bd80318259cc::t_b9045ad0eb575d 93
+pyproject.toml
+  s_95bd80318259cc::t_4a1e3305f00322 88-89,91-93,95-99
+  s_95bd80318259cc::t_10e0241538f0b4 53,81-87
+  s_95bd80318259cc::t_73dbea7042de23 80
+  s_95bd80318259cc::t_1f0219f42145d9 90,94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8795d395f2ab2300387d7342641ff68ed78ece03",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": null
+    }
+  }
+}
