@@ -6,7 +6,7 @@ import logging
 import os
 import uuid
 from dataclasses import replace
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, override
 
 import jinja2
 from PIL import Image
@@ -20,12 +20,6 @@ from mmirage.core.process.processors.batch_api.config import (
     BatchApiProcessorConfig,
 )
 from mmirage.core.process.variables import VariableEnvironment
-
-try:
-    from typing import override  # Python 3.12+
-except ImportError:  # pragma: no cover
-    from typing_extensions import override  # type: ignore
-
 
 logger = logging.getLogger(__name__)
 
