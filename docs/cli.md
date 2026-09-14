@@ -154,6 +154,9 @@ Stats are only available for shards that were run with `--stats` enabled (or `MM
         "runtime_seconds": 65.2,
         "runtime_human": "1m 5s",
         "rows_processed": 1024,
+        "rows_written": 1024,
+        "rows_filtered": null,
+        "rows_dropped_by_error": null,
         "throughput_rows_per_sec": 15.7,
         "gpu_util_mean": 88.4,
         "gpu_util_min": 72.0,
@@ -167,6 +170,9 @@ Stats are only available for shards that were run with `--stats` enabled (or `MM
     "total_shards": 1,
     "completed_shards": 1,
     "total_rows_processed": 1024,
+    "total_rows_written": 1024,
+    "total_rows_filtered": null,
+    "total_rows_dropped_by_error": null,
     "overall_throughput_rows_per_sec": 15.7,
     "mean_gpu_util_pct": 88.4,
     "tokens_per_sec_per_gpu": 753.1,
@@ -180,6 +186,8 @@ Key metrics:
 | Metric | Description |
 |---|---|
 | `runtime_seconds` | Shard wall-clock time (excludes SLURM queue wait) |
+| `rows_processed` / `rows_written` | Input rows in the shard vs. output rows saved to disk; a shard with `rows_written: 0` creates no `shard_*` folder |
+| `rows_filtered` / `rows_dropped_by_error` | Input rows intentionally dropped vs. lost to processor errors (`null` until a processor reports them) |
 | `overall_throughput_rows_per_sec` | Total rows / wall-clock time across all parallel shards |
 | `tokens_per_sec_per_gpu` | Output tokens per second per GPU — primary throughput metric |
 | `gpu_days_per_billion_tokens` | GPU-days to generate 1B output tokens — useful for cost comparison |
