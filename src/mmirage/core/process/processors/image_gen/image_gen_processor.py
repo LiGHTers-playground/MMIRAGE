@@ -10,7 +10,7 @@ import socket
 import tempfile
 import time
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, override
 
 import jinja2
 
@@ -24,12 +24,6 @@ from mmirage.core.process.processors.image_gen.config import (
     ImageOutputMode,
 )
 from mmirage.core.process.variables import VariableEnvironment
-
-try:
-    from typing import override  # Python 3.12+
-except ImportError:  # pragma: no cover
-    from typing_extensions import override  # type: ignore
-
 
 logger = logging.getLogger(__name__)
 
