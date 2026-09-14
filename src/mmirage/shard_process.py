@@ -8,9 +8,9 @@ import logging
 import os
 import sys
 import traceback
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
-from datasets import Dataset, DatasetDict
+from datasets import Dataset, DatasetDict, concatenate_datasets
 
 from mmirage.cli_utils.runtime import non_empty_path
 from mmirage.config.utils import load_mmirage_config
@@ -114,27 +114,35 @@ def _cast_image_columns(ds: DatasetLike, cols: List[str]) -> DatasetLike:
 
 def rewrite_batch(
     batch: Dict[str, List[Any]],
+    indices: Optional[List[int]] = None,
+    *,
     mapper: MMIRAGEMapper,
     renderer: TemplateRenderer,
     image_base_path: Optional[str] = None,
+    kept: Optional[List[int]] = None,
 ) -> Dict[str, List[Any]]:
     """Rewrite a batch of samples by applying transformations.
     Args:
         batch: Dictionary mapping column names to lists of values.
+        indices: Dataset positions of the rows; ``Dataset.map(with_indices=True)``
+            passes them as the second positional argument.
         mapper: MMIRAGEMapper for processing transformations.
         renderer: TemplateRenderer for generating output.
         image_base_path: Optional base directory for resolving relative image paths.
+        kept: When given, the ``row_index`` of every row that survived the
+            filter steps is appended to it, in the order the rows come back
+            from the mapper.
     Returns:
         Dictionary mapping output keys to lists of rendered values.
-    Raises:
-        ValueError: If variables are not computable given the configuration.
     """
-    if not mapper.validate_vars():
-        raise ValueError(
-            "Uncomputable variables detected. Verify your configuration and make sure that there is no undefined variables"
-        )
-
-    batch_environment = mapper.rewrite_batch(batch, image_base_path)
+    batch_environment = mapper.rewrite_batch(batch, image_base_path, indices=indices)
+    if kept is not None:
+        # Every row carries an index because the map runs with_indices=True.
+        kept.extend(cast(int, env.row_index) for env in batch_environment)
+    if not batch_environment:
+        # The renderer returns {} for no rows, which `Dataset.map` rejects as a
+        # schema mismatch; an empty list per output key is a valid 0-row batch.
+        return {key: [] for key in renderer.output_schema}
     rendered_list = renderer.batch_render(batch_environment)
     return rendered_list
 
@@ -152,20 +160,62 @@ def _map_split(
 
     Columns are removed per split so a ``DatasetDict`` whose splits have
     different columns does not fail on a column missing from one of them.
+
+    With a filter step the map may return fewer rows than it received, which
+    ``Dataset.map`` only accepts when every input column is removed. The kept
+    row positions are collected instead, and when the caller wants the input
+    columns they are selected back and joined column-wise onto the output.
     """
-    return split_ds.map(
+    if not mapper.has_filter:
+        return split_ds.map(
+            rewrite_batch,
+            batched=True,
+            batch_size=batch_size,
+            load_from_cache_file=False,
+            desc=desc,
+            fn_kwargs={
+                "mapper": mapper,
+                "renderer": renderer,
+                "image_base_path": image_base_path,
+            },
+            remove_columns=_remove_columns(split_ds) if remove_columns else [],
+        )
+
+    # Filled in-process by rewrite_batch, one call per batch in dataset order.
+    # Safe because num_proc is unset: the map runs in this process.
+    kept: List[int] = []
+    ds_processed = split_ds.map(
         rewrite_batch,
         batched=True,
         batch_size=batch_size,
+        with_indices=True,
         load_from_cache_file=False,
         desc=desc,
         fn_kwargs={
             "mapper": mapper,
             "renderer": renderer,
             "image_base_path": image_base_path,
+            "kept": kept,
         },
-        remove_columns=_remove_columns(split_ds) if remove_columns else [],
+        remove_columns=split_ds.column_names,
     )
+    if remove_columns or len(ds_processed) == 0:
+        return ds_processed
+
+    # A processor that returns fresh environments would lose the indices and
+    # desync the two sides; `concatenate_datasets(axis=1)` does not check.
+    assert len(kept) == len(ds_processed), (
+        f"{len(kept)} kept row indices for {len(ds_processed)} output rows"
+    )
+
+    # Join the surviving input rows back on. `concatenate_datasets(axis=1)`
+    # keeps features such as ClassLabel and Image as-is but raises on a
+    # duplicated column name, so output-schema columns are dropped from the
+    # input side first (the map would have overwritten them anyway).
+    kept_ds = split_ds.select(kept).remove_columns(
+        [c for c in split_ds.column_names if c in renderer.output_schema]
+    )
+    return concatenate_datasets([kept_ds, ds_processed], axis=1)
 
 
 def main():
@@ -265,7 +315,15 @@ def main():
                 f"Logical shard {shard_id} has no input rows; marking success "
                 "without loading processors."
             )
-            _mark_success(state_dir, stats=ShardStats(rows_processed=0, rows_written=0))
+            _mark_success(
+                state_dir,
+                stats=ShardStats(
+                    rows_processed=0,
+                    rows_written=0,
+                    rows_filtered=0,
+                    rows_dropped_by_error=0,
+                ),
+            )
             return
 
         mapper = MMIRAGEMapper(
@@ -352,6 +410,12 @@ def main():
 
                 ds_processed_all.append(ds_processed)
 
+            # Before any save, so a two-dataset shard never writes dataset 0
+            # and then fails on dataset 1.
+            mapper.check_filter_errors()
+            for line in mapper.filter_summary():
+                logger.info(line)
+
             for ds_idx, (ds_config, ds_processed) in enumerate(
                 zip(datasets_config, ds_processed_all)
             ):
@@ -389,6 +453,8 @@ def main():
             stats = ShardStats(
                 rows_processed=shard_rows,
                 rows_written=rows_written,
+                rows_filtered=mapper.total_rows_filtered(),
+                rows_dropped_by_error=mapper.total_rows_dropped_by_error(),
                 gpu_util_mean=gpu_info["mean"],
                 gpu_util_min=gpu_info["min"],
                 gpu_util_max=gpu_info["max"],

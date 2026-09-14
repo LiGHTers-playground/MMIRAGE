@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, Literal, Optional, Sequence
+from typing import Any, ClassVar, Dict, Literal, Optional, Sequence
 
 from jinja2 import Environment, meta
 
@@ -65,6 +65,9 @@ class BatchApiOutputVar(OutputVar):
     prompt: str = ""
     output_schema: list[str] = field(default_factory=list)
     output_type: str = ""
+    # The shard map only stores a ``__BATCH_SUBMITTED__`` placeholder; the real
+    # value is filled in by ``mmirage merge`` once the provider returns results.
+    available_at_map_time: ClassVar[bool] = False
 
     def is_computable(self, vars: Sequence[BaseVar]) -> bool:
         """Check if all variables referenced in the prompt are available."""

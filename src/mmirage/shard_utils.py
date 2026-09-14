@@ -349,7 +349,7 @@ def _drop_empty_splits(ds: DatasetLike) -> Optional[DatasetLike]:
 
     A 0-row dataset must never reach `_save_dataset_atomic`: `save_to_disk`
     either fails outright (with an `Image` column) or writes a folder that
-    `load_from_disk` cannot reload, and `cast_column` on 0 rows raises.
+    `load_from_disk` cannot reload.
     """
     if isinstance(ds, DatasetDict):
         kept = {name: split for name, split in ds.items() if len(split) > 0}
