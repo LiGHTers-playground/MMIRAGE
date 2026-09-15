@@ -1,0 +1,21 @@
+src/mmirage/core/process/processors/custom/custom_processor.py
+  s_95bd80318259cc::t_ac25303c19271d 94
+  s_95bd80318259cc::t_23c5c13b03dea5 157,164
+  s_95bd80318259cc::t_a514d7358219c0 50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9e55c535cebbb31224a825c7e3a9dc0ed1e47d0d",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}

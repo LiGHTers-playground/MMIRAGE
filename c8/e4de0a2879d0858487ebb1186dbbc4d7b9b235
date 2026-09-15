@@ -1,0 +1,29 @@
+pyproject.toml
+  s_95bd80318259cc::t_b9045ad0eb575d 96
+  s_95bd80318259cc::t_73dbea7042de23 80
+docs/developer.md
+  s_95bd80318259cc::t_b9045ad0eb575d 93
+.github/workflows/tests.yml
+  s_95bd80318259cc::t_b9045ad0eb575d 35,37-51
+tests/test_cli_run_local.py
+  s_95bd80318259cc::t_8b5070e7d49100 9
+  s_95bd80318259cc::t_00179863150034 1-8,10-38
+src/mmirage/cli.py
+  s_95bd80318259cc::t_59444f98be2d6b 64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c8e4de0a2879d0858487ebb1186dbbc4d7b9b235",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}

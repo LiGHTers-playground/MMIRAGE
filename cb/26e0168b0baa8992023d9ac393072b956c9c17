@@ -1,0 +1,28 @@
+src/mmirage/core/process/batch/orchestrator.py
+  s_95bd80318259cc::t_6e722da987a3fc 222
+  s_95bd80318259cc::t_4a0669c85f6630 35,39
+tests/test_batch_orchestrator.py
+  s_95bd80318259cc::t_222b3c5cdb12c5 83-121
+tests/test_batch_collector.py
+  s_95bd80318259cc::t_2589c6eb79e29b 7-20
+src/mmirage/core/process/batch/metadata_utils.py
+  s_95bd80318259cc::t_e9c3e725762735 20,36-41,46
+src/mmirage/core/process/processors/batch_api/batch_api_processor.py
+  s_95bd80318259cc::t_1ffd5b9c9b1718 108,123
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "cb26e0168b0baa8992023d9ac393072b956c9c17",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}

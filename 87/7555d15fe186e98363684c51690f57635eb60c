@@ -1,0 +1,121 @@
+pyproject.toml
+  s_95bd80318259cc::t_b9045ad0eb575d 96
+  s_95bd80318259cc::t_73dbea7042de23 80
+docs/developer.md
+  s_95bd80318259cc::t_b9045ad0eb575d 93
+.github/workflows/tests.yml
+  s_95bd80318259cc::t_b9045ad0eb575d 35,37-51
+tests/test_cli_run_local.py
+  s_95bd80318259cc::t_8b5070e7d49100 9
+  s_95bd80318259cc::t_00179863150034 1-8,10-38
+src/mmirage/cli.py
+  s_95bd80318259cc::t_59444f98be2d6b 64
+tests/test_openai_batch_adapter.py
+  s_95bd80318259cc::t_37561214a21929 615-680
+  s_95bd80318259cc::t_9f6917d527c04e 224
+src/mmirage/core/process/batch/openai_adapter.py
+  s_95bd80318259cc::t_d02e0b4ac854c6 188-192,198-216
+  s_95bd80318259cc::t_65b77869df9a6d 328-331
+  s_95bd80318259cc::t_be17921aeb2042 12,186,195
+tests/test_batch_api_processor_export.py
+  s_95bd80318259cc::t_113e6621c0c2e2 4
+  s_95bd80318259cc::t_161be31d49e09e 124-152
+  s_95bd80318259cc::t_9246da91da7ac4 102-103,120-121
+  s_95bd80318259cc::t_9ff8b7bd120d1f 153-174
+src/mmirage/core/process/processors/batch_api/batch_api_processor.py
+  s_95bd80318259cc::t_b48240079b9e6e 65-70
+  s_95bd80318259cc::t_f3b1469ae84486 154
+  s_95bd80318259cc::t_ec6ec4881a168b 155-157
+  s_95bd80318259cc::t_1ffd5b9c9b1718 102,117
+  s_95bd80318259cc::t_9f6917d527c04e 16,77
+  s_95bd80318259cc::t_165f3fdbb4c3fa 295
+  s_95bd80318259cc::t_c38099018f5cf7 9
+src/mmirage/core/process/batch/orchestrator.py
+  s_95bd80318259cc::t_6e722da987a3fc 222
+  s_95bd80318259cc::t_4a0669c85f6630 35,39
+tests/test_batch_orchestrator.py
+  s_95bd80318259cc::t_222b3c5cdb12c5 83-121
+tests/test_batch_collector.py
+  s_95bd80318259cc::t_2589c6eb79e29b 9-22
+  s_95bd80318259cc::t_55c9912bd44286 243,456
+  s_95bd80318259cc::t_9a960ed5bb7c5b 257-258,265-269,275-278,287,291-292,296,302,306-313,322-374,376-379,381-391
+  s_95bd80318259cc::t_8b03d0a86b519f 251
+  s_95bd80318259cc::t_5739c769aae077 794,817,836-838
+  s_95bd80318259cc::t_71d764a9506c21 392-393
+  s_95bd80318259cc::t_9f6917d527c04e 90,148,230,295,375,442,732,825
+  s_95bd80318259cc::t_b96b6deeac6105 95,154,186,234,299,380,447,493,649,702-703,707,829
+  s_95bd80318259cc::t_f85528852373ce 553-555,603-605
+  s_95bd80318259cc::t_6b95b31f189322 667-669,749
+  s_95bd80318259cc::t_a3e3ccfaef8701 4-5
+  s_95bd80318259cc::t_3fe9030e9be1b1 770-771,774-775,791
+src/mmirage/core/process/batch/metadata_utils.py
+  s_95bd80318259cc::t_e9c3e725762735 20,39-44,49
+  s_95bd80318259cc::t_484c283841b97e 50
+  s_95bd80318259cc::t_0172f0da503782 21-22,28
+  s_95bd80318259cc::t_4b4a4280238517 55,64
+src/mmirage/core/process/batch/collector.py
+  s_95bd80318259cc::t_b3e5ceee4da5ed 47-49,70-84,90,105
+  s_95bd80318259cc::t_a4b17016de8455 123-125,127,139-140,146-149,151-152,154-155
+  s_95bd80318259cc::t_af9ad63ea8a960 1,5-7
+  s_95bd80318259cc::t_9f6917d527c04e 34
+  s_95bd80318259cc::t_6dc8b37749f8ea 115
+  s_95bd80318259cc::t_341df4d34f660f 182-184
+docs/batch_api.md
+  s_95bd80318259cc::t_b0bbff4f0fd78b 170-171
+  s_95bd80318259cc::t_0572737e281478 132-133
+tests/test_anthropic_batch_adapter.py
+  s_95bd80318259cc::t_9f6917d527c04e 15,443
+tests/test_integration_receiver.py
+  s_95bd80318259cc::t_9f6917d527c04e 60
+  s_95bd80318259cc::t_c7b11af0063836 64
+tests/test_batch_status_checker.py
+  s_95bd80318259cc::t_9f6917d527c04e 71
+  s_95bd80318259cc::t_c56526a629301b 233-235,275-277
+  s_95bd80318259cc::t_6b95b31f189322 28-30
+  s_95bd80318259cc::t_2022087a4cfbac 78,117,165,197
+src/mmirage/core/process/batch/status_checker.py
+  s_95bd80318259cc::t_9f6917d527c04e 25,71
+src/mmirage/core/process/batch/anthropic_adapter.py
+  s_95bd80318259cc::t_3d0c4932e8eeb0 375-377
+  s_95bd80318259cc::t_fdd3ed9fb72d3d 114-118
+  s_95bd80318259cc::t_e01a6cf8d2c63a 325-327
+src/mmirage/core/process/batch/provider_resolution.py
+  s_95bd80318259cc::t_4540cbab076716 132-133
+  s_95bd80318259cc::t_161dd9a81391cc 92-93
+  s_95bd80318259cc::t_5953f02fd5f899 112,116
+  s_95bd80318259cc::t_024aeb973ba753 54
+tests/batch_fixtures.py
+  s_95bd80318259cc::t_e8d6a43ed609da 56-64
+  s_95bd80318259cc::t_a60e8e9fe45fb6 10-12
+src/mmirage/core/process/processors/custom/custom_processor.py
+  s_95bd80318259cc::t_ac25303c19271d 94
+  s_95bd80318259cc::t_23c5c13b03dea5 157,164
+  s_95bd80318259cc::t_a514d7358219c0 50
+src/mmirage/core/process/processors/image_gen/backends/base.py
+  s_95bd80318259cc::t_c38099018f5cf7 5
+src/mmirage/core/loader/jsonl.py
+  s_95bd80318259cc::t_c38099018f5cf7 6
+src/mmirage/core/process/processors/image_gen/image_gen_processor.py
+  s_95bd80318259cc::t_c38099018f5cf7 13
+src/mmirage/core/process/processors/llm/llm_processor.py
+  s_95bd80318259cc::t_c38099018f5cf7 157
+  s_95bd80318259cc::t_92f1877e46a210 9
+tests/test_batch_provider_resolution.py
+  s_95bd80318259cc::t_df2062155afdbb 1-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "877555d15fe186e98363684c51690f57635eb60c",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}

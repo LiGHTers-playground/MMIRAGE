@@ -1,0 +1,30 @@
+tests/test_batch_collector.py
+  s_95bd80318259cc::t_55c9912bd44286 241,454
+  s_95bd80318259cc::t_9a960ed5bb7c5b 255-256,263-267,273-276,285,289-290,294,300,304-311,320-389
+  s_95bd80318259cc::t_8b03d0a86b519f 249
+  s_95bd80318259cc::t_5739c769aae077 791,814,833-835
+  s_95bd80318259cc::t_71d764a9506c21 390-391
+src/mmirage/core/process/batch/metadata_utils.py
+  s_95bd80318259cc::t_484c283841b97e 50
+  s_95bd80318259cc::t_0172f0da503782 21-22,28
+src/mmirage/core/process/batch/collector.py
+  s_95bd80318259cc::t_b3e5ceee4da5ed 47-49,70-84,90,105
+  s_95bd80318259cc::t_a4b17016de8455 125-127,129,141-142,148-151,153-154,156-157
+  s_95bd80318259cc::t_af9ad63ea8a960 1,5-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "1a4be84b463a62a5f9c26b13a7c02bf7c356db84",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
