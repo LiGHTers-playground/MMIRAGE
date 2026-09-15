@@ -17,11 +17,15 @@ class BatchMetadataRecord:
     provider: str
     provider_batch_id: str
     custom_id_to_source_index: Dict[str, int] = field(default_factory=dict)
+    shard_id: int = 0
+    # ISO-8601 UTC as written by the orchestrator, so newer receipts sort later as text.
+    submitted_at_utc: str = ""
 
     @classmethod
     def from_mapping(cls, payload: Mapping[str, Any]) -> "BatchMetadataRecord":
         provider = str(payload.get("provider", "")).strip().lower()
         provider_batch_id = str(payload.get("provider_batch_id", "")).strip()
+        submitted_at_utc = str(payload.get("submitted_at_utc") or "").strip()
 
         raw_mapping = payload.get("custom_id_to_source_index", {})
         custom_id_to_source_index: Dict[str, int] = {}
@@ -32,10 +36,18 @@ class BatchMetadataRecord:
                 except (TypeError, ValueError):
                     continue
 
+        # Receipts written before shard ids were recorded all belong to shard 0.
+        try:
+            shard_id = int(payload.get("shard_id", 0))
+        except (TypeError, ValueError):
+            shard_id = 0
+
         return cls(
             provider=provider,
             provider_batch_id=provider_batch_id,
             custom_id_to_source_index=custom_id_to_source_index,
+            shard_id=shard_id,
+            submitted_at_utc=submitted_at_utc,
         )
 
 

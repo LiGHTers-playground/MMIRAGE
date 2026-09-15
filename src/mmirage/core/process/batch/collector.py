@@ -1,8 +1,10 @@
-"""Collect provider batch receipts and merge completed rows by source index.
+"""Collect provider batch receipts and merge completed rows by shard and source index.
 
 The receiver consumes one or more metadata receipt files, resolves the provider
 configuration for each recorded batch, fetches the provider results, and writes a
-single JSONL file ordered by the original source row index.
+single JSONL file ordered by shard, then by the original source row index within
+the shard. When a retried shard left several receipts for the same row, the row
+from the receipt submitted last is kept.
 """
 
 from __future__ import annotations
@@ -17,7 +19,6 @@ from typing import (
     Dict,
     List,
     Mapping,
-    MutableMapping,
     Optional,
     Sequence,
     Tuple,
@@ -43,8 +44,9 @@ def _aggregate_batch_mappings(
 ) -> Dict[Tuple[str, str], Dict[str, int]]:
     """Group source-index mappings by provider and provider batch ID.
 
-    Later receipts for the same provider batch overwrite earlier entries for the
-    same custom ID, which keeps the latest parsed mapping authoritative.
+    Later receipt lines for the same provider batch overwrite earlier entries for
+    the same custom ID. Choosing between different batches that cover the same
+    row is left to ``collect_and_merge``, which keeps the newest receipt.
     """
     aggregated: Dict[Tuple[str, str], Dict[str, int]] = {}
 
@@ -65,12 +67,27 @@ def _aggregate_batch_mappings(
     return aggregated
 
 
+def _latest_receipt_by_batch(
+    records: Sequence[BatchMetadataRecord],
+) -> Dict[Tuple[str, str], BatchMetadataRecord]:
+    """Keep one receipt per provider batch: the last submitted, then the last read."""
+    latest: Dict[Tuple[str, str], BatchMetadataRecord] = {}
+
+    for record in records:
+        key = (record.provider, record.provider_batch_id)
+        current = latest.get(key)
+        if current is None or record.submitted_at_utc >= current.submitted_at_utc:
+            latest[key] = record
+
+    return latest
+
+
 def collect_and_merge(
     records: Sequence[BatchMetadataRecord],
     provider_configs: Mapping[str, BatchProviderConfig],
     output_path: str,
 ) -> List[Dict[str, Any]]:
-    """Fetch provider outputs and write merged rows in source index order.
+    """Fetch provider outputs and write merged rows in shard, then source index order.
 
     Args:
         records: Parsed receipt metadata containing provider batch references.
@@ -85,6 +102,7 @@ def collect_and_merge(
         ValueError: If a receipt references a provider that cannot be resolved.
     """
     pair_to_mapping = _aggregate_batch_mappings(records)
+    pair_to_receipt = _latest_receipt_by_batch(records)
 
     adapters: Dict[str, Any] = {}
     pair_to_results: Dict[Tuple[str, str], Sequence[Dict[str, Any]]] = {}
@@ -104,8 +122,11 @@ def collect_and_merge(
             config=provider_configs[provider],
         )
 
-    indexed_rows: MutableMapping[Tuple[str, str, str], Dict[str, Any]] = {}
+    # One row per (shard_id, source_index): a retried shard resubmits its rows under
+    # new batch ids, and the receipt submitted last is the one that counts.
+    rows_by_position: Dict[Tuple[int, int], Tuple[str, Dict[str, Any]]] = {}
     for pair, mapping in pair_to_mapping.items():
+        receipt = pair_to_receipt[pair]
         results = pair_to_results.get(pair, [])
         for result_row in results:
             custom_id = str(result_row.get("custom_id", "")).strip()
@@ -117,18 +138,23 @@ def collect_and_merge(
                 for key in ("input_tokens", "output_tokens")
                 if key in result_row
             }
-            indexed_rows[(pair[0], pair[1], custom_id)] = {
+            row = {
+                "shard_id": receipt.shard_id,
                 "source_index": int(mapping[custom_id]),
                 "custom_id": custom_id,
                 **row_payload,
                 **usage,
             }
+            position = (receipt.shard_id, row["source_index"])
+            current = rows_by_position.get(position)
+            if current is None or receipt.submitted_at_utc >= current[0]:
+                rows_by_position[position] = (receipt.submitted_at_utc, row)
 
-    # Sort primarily by source_index and secondarily by custom_id to ensure
-    # deterministic ordering when multiple rows share the same source_index.
+    # Every shard counts its rows from 0, so order by shard first; custom_id keeps
+    # the order deterministic should a position ever hold more than one row.
     ordered_rows = sorted(
-        indexed_rows.values(),
-        key=lambda row: (row.get("source_index", 0), row.get("custom_id", "")),
+        (row for _, row in rows_by_position.values()),
+        key=lambda row: (row["shard_id"], row["source_index"], row["custom_id"]),
     )
 
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)

@@ -105,6 +105,7 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
                 ),
             ),
             export_prompts_path=export_prompts_path,
+            shard_id=self.shard_id,
             export_batch_prefix="text-",
         )
         self._multimodal_orchestrator = BatchSubmissionOrchestrator(
@@ -119,6 +120,7 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
                 ),
             ),
             export_prompts_path=export_prompts_path,
+            shard_id=self.shard_id,
             export_batch_prefix="multimodal-",
         )
 
@@ -155,7 +157,10 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
     def _next_custom_id(self, output_name: str, modality: str) -> str:
         self._batch_request_counter += 1
         # Only [a-zA-Z0-9_-] to stay valid for every provider, anthropic rejects the rest.
-        return f"{output_name}-{modality}-{self._batch_request_counter}"
+        # The counter restarts in every shard process, so the shard id keeps ids unique.
+        return (
+            f"{output_name}-{modality}-s{self.shard_id}-{self._batch_request_counter}"
+        )
 
     def get_load_time(self) -> float:
         """Return 0: no model is loaded in batch submission mode."""

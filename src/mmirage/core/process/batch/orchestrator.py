@@ -32,9 +32,11 @@ class BatchSubmissionOrchestrator:
         config: BatchProviderConfig,
         export_prompts_path: Optional[str] = None,
         export_batch_prefix: str = "",
+        shard_id: int = 0,
     ) -> None:
         self.adapter = adapter
         self.config = config
+        self.shard_id = shard_id
         self.chunker = BatchRequestChunker(adapter=adapter, config=config)
         self._export_prompts_path = export_prompts_path
         self._export_batch_prefix = export_batch_prefix
@@ -217,6 +219,7 @@ class BatchSubmissionOrchestrator:
 
         metadata_record: Dict[str, Any] = {
             "provider": self.config.provider,
+            "shard_id": self.shard_id,
             "chunk_id": chunk_id,
             "provider_batch_id": parsed_result.provider_batch_id,
             "status": parsed_result.status,
