@@ -82,9 +82,6 @@ ignore = ["E501"]
 pythonVersion = "3.12"
 typeCheckingMode = "basic"
 include = ["src/mmirage"]
-# sglang is not installed in CI; a missing import is a warning, not an error.
-reportMissingImports = "warning"
-reportMissingModuleSource = "warning"
 # Known type errors; later cleanup PRs remove files from this list one at a time.
 ignore = [
   "src/mmirage/core/process/batch/openai_adapter.py",

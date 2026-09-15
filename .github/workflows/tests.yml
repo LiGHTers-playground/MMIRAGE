@@ -49,5 +49,11 @@ jobs:
       - name: Install package with dev dependencies
         run: pip install -e ".[dev]"
 
+      # Installed by hand here and not declared in pyproject because it is only
+      # for type checking: pyright reads the sources and never runs them, and
+      # its real dependencies (torch, CUDA kernels) are not wanted on a CPU runner.
+      - name: Install sglang sources for pyright
+        run: pip install --no-deps sglang==0.5.10
+
       - name: Run pyright
         run: pyright
