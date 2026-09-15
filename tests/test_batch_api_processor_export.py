@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import pytest
 from batch_fixtures import UnitBatchConfig
 
 from mmirage.core.process.base import ProcessorRegistry
@@ -120,3 +121,32 @@ def test_batch_api_processor_exports_what_batch_process_sample_buffered(
         "answer-text-2",
     ]
     assert lines[0]["request"]["messages"][0]["content"] == "Question about Berne"
+
+
+def test_batch_api_processor_requires_metadata_output_path_for_submission(
+    unit_provider,
+):
+    config = BatchApiProcessorConfig(
+        type="batch_api",
+        provider_config=UnitBatchConfig(provider="unit", metadata_output_path=""),
+    )
+
+    processor_cls = ProcessorRegistry.get_processor("batch_api")
+
+    with pytest.raises(ValueError, match="metadata_output_path"):
+        processor_cls(config)
+
+
+def test_batch_api_processor_export_mode_allows_empty_metadata_output_path(
+    tmp_path, unit_provider
+):
+    config = BatchApiProcessorConfig(
+        type="batch_api",
+        provider_config=UnitBatchConfig(provider="unit", metadata_output_path=""),
+        export_prompts_dir=str(tmp_path / "exports"),
+    )
+
+    processor_cls = ProcessorRegistry.get_processor("batch_api")
+    processor = processor_cls(config)
+
+    assert processor._text_orchestrator._export_prompts_path is not None
