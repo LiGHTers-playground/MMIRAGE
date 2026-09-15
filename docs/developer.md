@@ -83,11 +83,13 @@ ruff format .
 
 Ruff configuration (rule selection, ignores) lives in `pyproject.toml` under `[tool.ruff.lint]`. The `Lint` GitHub Actions workflow enforces both lint and formatting on every pull request.
 
-Type-check with mypy:
+Type-check with pyright:
 
 ```bash
-mypy src/mmirage/
+pyright
 ```
+
+pyright also runs in CI on every pull request. Files listed under `ignore` in the `[tool.pyright]` section of `pyproject.toml` are known type debt being removed one file at a time; a new file must be clean.
 
 ---
 
