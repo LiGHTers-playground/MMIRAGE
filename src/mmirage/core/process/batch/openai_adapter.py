@@ -9,7 +9,7 @@ import mimetypes
 import os
 from typing import Any, Dict, List, Mapping, Sequence
 
-from openai import AuthenticationError, OpenAI
+from openai import OpenAI
 
 from mmirage.config.batch_provider import BatchProviderConfig
 from mmirage.config.openai_batch import OpenAIBatchConfig
@@ -183,7 +183,7 @@ class OpenAIBatchAdapter(BatchSubmissionAdapter):
             raise ValueError(
                 f"Batch '{provider_batch_id}' is not completed yet (status={status}). "
                 "Please retry after the provider marks it completed and produces an output file."
-            ) from None
+            )
 
         # A partially failed batch has both files; read the output first, then the errors.
         content_file_ids = [
@@ -192,7 +192,7 @@ class OpenAIBatchAdapter(BatchSubmissionAdapter):
         if not content_file_ids:
             raise ValueError(
                 f"Batch '{provider_batch_id}' completed, but neither output_file_id nor error_file_id was returned."
-            ) from None
+            )
 
         rows: List[Dict[str, Any]] = []
         for content_file_id in content_file_ids:
@@ -325,15 +325,10 @@ class OpenAIBatchAdapter(BatchSubmissionAdapter):
                 "OpenAI API key is missing. set OPENAI_API_KEY. with `export OPENAI_API_KEY=your_api_key` ."
             )
 
-        try:
-            client_kwargs = {"api_key": api_key}
-            if config.base_url:
-                client_kwargs["base_url"] = config.base_url
-            return OpenAI(**client_kwargs)
-        except AuthenticationError as exc:
-            raise ValueError(f"OpenAI authentication failed: {exc}") from exc
-        except Exception as exc:
-            raise ValueError(f"Failed to create OpenAI client: {exc}") from exc
+        client_kwargs = {"api_key": api_key}
+        if config.base_url:
+            client_kwargs["base_url"] = config.base_url
+        return OpenAI(**client_kwargs)
 
     @staticmethod
     def _extract_content_text(content_response: Any) -> str:
@@ -357,5 +352,3 @@ class OpenAIBatchAdapter(BatchSubmissionAdapter):
         raise ValueError(
             "Unable to parse OpenAI files.content response: missing text or content bytes"
         )
-
-    # _read_attr removed: code now expects OpenAI SDK v1 response objects with attributes.

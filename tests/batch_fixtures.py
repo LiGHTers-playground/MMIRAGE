@@ -7,6 +7,9 @@ from mmirage.core.process.batch.adapter import (
     BatchSubmissionAdapter,
     BatchSubmissionResult,
 )
+from mmirage.core.process.batch.provider_resolution import (
+    resolve_single_provider_config,
+)
 
 
 @dataclass
@@ -50,3 +53,12 @@ class RecordingAdapter(BatchSubmissionAdapter):
 
     def retrieve_results(self, provider_batch_id, config):
         return []
+
+
+def unit_provider_config(**overrides) -> BatchProviderConfig:
+    """Build a unit provider config the way the loader does: through resolution.
+
+    The provider must be registered first, so use it with the ``unit_provider``
+    fixture.
+    """
+    return resolve_single_provider_config({"provider": "unit", **overrides})

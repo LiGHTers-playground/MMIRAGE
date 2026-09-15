@@ -57,11 +57,11 @@ def test_integration_receiver_reads_receipt_and_writes_merged_output(
             ]
 
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: FakeAdapter(),
     )
 
-    records = _read_metadata_records(str(metadata_path))
+    records = _read_metadata_records([str(metadata_path)])
     rows = collect_and_merge(
         records=records,
         provider_configs={"openai": OpenAIBatchConfig()},

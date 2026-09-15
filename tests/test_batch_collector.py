@@ -1,6 +1,8 @@
 import json
 from types import SimpleNamespace
 
+from batch_fixtures import unit_provider_config
+
 from mmirage.config.openai_batch import OpenAIBatchConfig
 
 
@@ -85,12 +87,12 @@ def test_collect_and_merge_reconstructs_rows_deterministically(
 
     fake_adapter = FakeAdapter()
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: fake_adapter,
     )
 
     provider_configs = {"openai": OpenAIBatchConfig()}
-    records = _read_metadata_records(str(metadata_path))
+    records = _read_metadata_records([str(metadata_path)])
     assert "Skipping malformed metadata JSON line" in caplog.text
     rows = collect_and_merge(
         records=records,
@@ -143,13 +145,13 @@ def test_collect_and_merge_carries_provider_usage(tmp_path, monkeypatch):
             ]
 
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: FakeAdapter(),
     )
 
     output_path = tmp_path / "merged.jsonl"
     rows = collect_and_merge(
-        records=_read_metadata_records(str(metadata_path)),
+        records=_read_metadata_records([str(metadata_path)]),
         provider_configs={"openai": OpenAIBatchConfig()},
         output_path=str(output_path),
     )
@@ -181,7 +183,7 @@ def test_collect_and_merge_raises_for_missing_provider_config(tmp_path):
     )
 
     try:
-        records = _read_metadata_records(str(metadata_path))
+        records = _read_metadata_records([str(metadata_path)])
         collect_and_merge(
             records=records,
             provider_configs={},
@@ -225,11 +227,11 @@ def test_collect_and_merge_outputs_caption_for_plain_text_content(
             ]
 
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: FakeAdapter(),
     )
 
-    records = _read_metadata_records(str(metadata_path))
+    records = _read_metadata_records([str(metadata_path)])
     rows = collect_and_merge(
         records=records,
         provider_configs={"openai": OpenAIBatchConfig()},
@@ -290,11 +292,11 @@ def test_collect_and_merge_keeps_newest_receipt_for_retried_rows(tmp_path, monke
             return [{"custom_id": "answer-text-s0-1", "generated_text": text}]
 
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: UnitAdapter(),
     )
 
-    records = _read_metadata_records(str(metadata_path))
+    records = _read_metadata_records([str(metadata_path)])
     rows = collect_and_merge(
         records=records,
         provider_configs={"unit": SimpleNamespace(provider="unit")},
@@ -370,12 +372,12 @@ def test_collect_and_merge_orders_rows_by_shard_then_source_index(
             ]
 
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: UnitAdapter(),
     )
 
     rows = collect_and_merge(
-        records=_read_metadata_records(str(metadata_path)),
+        records=_read_metadata_records([str(metadata_path)]),
         provider_configs={"unit": SimpleNamespace(provider="unit")},
         output_path=str(tmp_path / "merged_shards.jsonl"),
     )
@@ -437,12 +439,12 @@ def test_collect_and_merge_uses_openai_adapter_generated_text(tmp_path, monkeypa
         FakeClient,
     )
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: OpenAIBatchAdapter(),
     )
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
 
-    records = _read_metadata_records(str(metadata_path))
+    records = _read_metadata_records([str(metadata_path)])
     rows = collect_and_merge(
         records=records,
         provider_configs={"openai": OpenAIBatchConfig()},
@@ -488,7 +490,7 @@ def test_collector_main_uses_config_and_records(tmp_path, monkeypatch):
     config_path.write_text("processors: []\n", encoding="utf-8")
 
     cfg = SimpleNamespace(
-        processors=[SimpleNamespace(provider_config={"provider": "openai"})]
+        processors=[SimpleNamespace(provider_config=OpenAIBatchConfig())]
     )
     captured = {}
 
@@ -548,10 +550,9 @@ def test_collector_main_uses_config_metadata_path_when_missing_cli_arg(
     cfg = SimpleNamespace(
         processors=[
             SimpleNamespace(
-                provider_config={
-                    "provider": "openai",
-                    "metadata_output_path": str(metadata_base),
-                }
+                provider_config=OpenAIBatchConfig(
+                    metadata_output_path=str(metadata_base)
+                )
             )
         ]
     )
@@ -599,10 +600,9 @@ def test_collector_main_raises_when_config_metadata_paths_missing(
     cfg = SimpleNamespace(
         processors=[
             SimpleNamespace(
-                provider_config={
-                    "provider": "openai",
-                    "metadata_output_path": str(metadata_base),
-                }
+                provider_config=OpenAIBatchConfig(
+                    metadata_output_path=str(metadata_base)
+                )
             )
         ]
     )
@@ -646,7 +646,7 @@ def test_collector_main_raises_when_metadata_provider_missing_in_config(
 
     # Config intentionally only defines openai, not mistral.
     cfg = SimpleNamespace(
-        processors=[SimpleNamespace(provider_config={"provider": "openai"})]
+        processors=[SimpleNamespace(provider_config=OpenAIBatchConfig())]
     )
     monkeypatch.setattr("mmirage.config.utils.load_mmirage_config", lambda path: cfg)
 
@@ -664,7 +664,9 @@ def test_collector_main_raises_when_metadata_provider_missing_in_config(
     assert "missing from YAML batch config" in caplog.text
 
 
-def test_collect_and_merge_routes_multiple_providers(tmp_path, monkeypatch):
+def test_collect_and_merge_routes_multiple_providers(
+    tmp_path, monkeypatch, unit_provider
+):
     from mmirage.core.process.batch.collector import (
         _read_metadata_records,
         collect_and_merge,
@@ -697,12 +699,12 @@ def test_collect_and_merge_routes_multiple_providers(tmp_path, monkeypatch):
 
     cfg = SimpleNamespace(
         processors=[
-            SimpleNamespace(provider_config={"provider": "openai"}),
-            SimpleNamespace(provider_config={"provider": "unit"}),
+            SimpleNamespace(provider_config=OpenAIBatchConfig()),
+            SimpleNamespace(provider_config=unit_provider_config()),
         ]
     )
 
-    records = _read_metadata_records(str(metadata_path))
+    records = _read_metadata_records([str(metadata_path)])
     provider_configs = resolve_provider_configs(records, cfg)
 
     class OpenAIAdapter:
@@ -727,7 +729,7 @@ def test_collect_and_merge_routes_multiple_providers(tmp_path, monkeypatch):
     }
 
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: adapters[config.provider],
     )
 
@@ -744,7 +746,7 @@ def test_collect_and_merge_routes_multiple_providers(tmp_path, monkeypatch):
     assert ("batch_unit", "unit") in adapters["unit"].calls
 
 
-def test_collector_main_raises_for_invalid_batch_provider_config(
+def test_collector_main_raises_for_duplicate_batch_provider_blocks(
     tmp_path, monkeypatch, caplog
 ):
     from mmirage.core.process.batch import collector
@@ -765,11 +767,12 @@ def test_collector_main_raises_for_invalid_batch_provider_config(
     config_path = tmp_path / "dummy.yaml"
     config_path.write_text("processors: []\n", encoding="utf-8")
 
+    # Two blocks for one provider is the only way a loaded config can still fail
+    # resolution: every block is a validated instance by then.
     cfg = SimpleNamespace(
         processors=[
-            SimpleNamespace(
-                provider_config={"provider": "openai", "batch_endpoint": "v1"}
-            )
+            SimpleNamespace(provider_config=OpenAIBatchConfig()),
+            SimpleNamespace(provider_config=OpenAIBatchConfig()),
         ]
     )
     monkeypatch.setattr("mmirage.config.utils.load_mmirage_config", lambda path: cfg)
@@ -785,7 +788,7 @@ def test_collector_main_raises_for_invalid_batch_provider_config(
         ]
     )
     assert rc == 1
-    assert "batch_endpoint must start with '/'" in caplog.text
+    assert "Duplicate batch blocks found for provider 'openai'" in caplog.text
 
 
 def test_collect_and_merge_keeps_one_row_per_position(tmp_path, monkeypatch):
@@ -819,11 +822,11 @@ def test_collect_and_merge_keeps_one_row_per_position(tmp_path, monkeypatch):
             ]
 
     monkeypatch.setattr(
-        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        "mmirage.core.process.batch.collector.BatchAdapterRegistry.create",
         lambda config: FakeAdapter(),
     )
 
-    records = _read_metadata_records(str(metadata_path))
+    records = _read_metadata_records([str(metadata_path)])
     rows = collect_and_merge(
         records=records,
         provider_configs={"openai": OpenAIBatchConfig()},

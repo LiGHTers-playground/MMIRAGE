@@ -22,7 +22,7 @@ from mmirage.core.process.batch.provider_resolution import resolve_provider_conf
 if TYPE_CHECKING:
     from mmirage.config.config import MMirageConfig
 
-from mmirage.core.process.batch.registry import BatchAdapterFactory
+from mmirage.core.process.batch.registry import BatchAdapterRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ def run_status_checker(
         metadata_records
     ):
         config = provider_configs[provider]
-        adapter = BatchAdapterFactory.from_config(config)
+        adapter = BatchAdapterRegistry.create(config)
         provider_counts = counter.setdefault(provider, {})
 
         try:
@@ -123,11 +123,6 @@ def check_batches(
         return 0
 
     provider_configs = resolve_provider_configs(records, cfg)
-    if not provider_configs:
-        logger.error(
-            "No supported provider configurations could be built from metadata."
-        )
-        return 1
 
     results = run_status_checker(
         metadata_records=records, provider_configs=provider_configs

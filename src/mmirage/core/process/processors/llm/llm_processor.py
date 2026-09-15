@@ -6,7 +6,7 @@ import json
 import logging
 import time
 from dataclasses import asdict
-from typing import Any, List
+from typing import Any, List, override
 
 import jinja2
 from pydantic import BaseModel, ValidationError
@@ -29,12 +29,6 @@ from transformers import AutoTokenizer
 from mmirage.core.process.base import BaseProcessor, ProcessorRegistry, TokenCounts
 from mmirage.core.process.processors.llm.config import LLMOutputVar, SGLangLLMConfig
 from mmirage.core.process.variables import VariableEnvironment
-
-try:
-    from typing import override  # Python 3.12+
-except ImportError:  # pragma: no cover
-    from typing_extensions import override  # type: ignore
-
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +154,7 @@ class LLMProcessor(BaseProcessor[LLMOutputVar]):
 
         # Import chat templates from sglang if available
         try:
-            from sglang.srt.conversation import chat_templates  # type: ignore
+            from sglang.srt.conversation import chat_templates
 
             if self.chat_template in chat_templates:
                 conv = chat_templates[self.chat_template].copy()

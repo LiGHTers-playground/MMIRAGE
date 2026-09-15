@@ -88,8 +88,6 @@ def execute_custom_function(row_dict: Dict[str, Any]) -> Any:
         Exception: Any standard Python exception raised by the user's function
                    will bubble up to be handled by the parent process.
     """
-    global _USER_FUNCTION
-
     if _USER_FUNCTION is None:
         raise RuntimeError(
             "Worker not initialized. 'initialize_worker' must be called first."
