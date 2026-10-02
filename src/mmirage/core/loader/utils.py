@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import os
 from typing import List, Optional, Union
 
@@ -10,16 +9,14 @@ from PIL import Image
 
 from mmirage.core.loader.base import AutoDataLoader, BaseDataLoaderConfig, DatasetLike
 
-logger = logging.getLogger(__name__)
-
 
 def load_datasets_from_configs(
     configs: List[BaseDataLoaderConfig],
 ) -> List[DatasetLike]:
     """Load multiple datasets from configurations.
 
-    Attempts to load datasets using the specified loader configurations.
-    Failed loads are logged as warnings and skipped.
+    Datasets are returned in config order, so callers can pair them with
+    their configs by position. Any failed load aborts the whole call.
 
     Args:
         configs: List of dataset configuration objects.
@@ -28,24 +25,26 @@ def load_datasets_from_configs(
         List of Hugging Face Datasets/DatasetDicts.
 
     Raises:
-        RuntimeError: If no datasets could be loaded successfully.
+        RuntimeError: If any dataset fails to load (or its loader returns
+            None), or if no configs are given.
     """
 
     valid_ds: List[DatasetLike] = []
     loader_by_type = {}
-    for ds_config in configs:
+    for idx, ds_config in enumerate(configs):
         loader = loader_by_type.get(ds_config.type)
         if loader is None:
             loader = AutoDataLoader.from_name(ds_config.type)()
             loader_by_type[ds_config.type] = loader
 
+        where = f"dataset at index {idx} (type={ds_config.type!r}, path={getattr(ds_config, 'path', None)!r})"
         try:
             ds = loader.from_config(ds_config)
-            if ds is None:
-                continue
-            valid_ds.append(ds)
         except Exception as e:
-            logger.warning(f"Dataset loading failed with error: {e}. Skipping")
+            raise RuntimeError(f"Failed to load {where}: {e}") from e
+        if ds is None:
+            raise RuntimeError(f"Loader returned no data for {where}")
+        valid_ds.append(ds)
 
     if not valid_ds:
         raise RuntimeError("No valid datasets loaded from the provided configs.")
