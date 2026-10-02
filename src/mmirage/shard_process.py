@@ -6,6 +6,7 @@ Supports both text-only and multimodal (vision-language) processing.
 import argparse
 import logging
 import os
+import signal
 import sys
 import traceback
 from typing import Any, Dict, List, Optional
@@ -35,6 +36,29 @@ from mmirage.shard_utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class ShardTerminatedError(Exception):
+    """Raised in the shard process when it receives SIGTERM."""
+
+
+def _install_sigterm_handler() -> None:
+    """Turn SIGTERM into ShardTerminatedError so the shard is marked failed.
+
+    SLURM sends SIGTERM before SIGKILL on timeout or scancel. Forked
+    children (e.g. custom processor workers) inherit the handler, so they
+    restore the default action and terminate as usual.
+    """
+    main_pid = os.getpid()
+
+    def handler(signum, frame):
+        if os.getpid() != main_pid:
+            signal.signal(signum, signal.SIG_DFL)
+            os.kill(os.getpid(), signum)
+            return
+        raise ShardTerminatedError("received SIGTERM")
+
+    signal.signal(signal.SIGTERM, handler)
 
 
 def _image_path_schema_cols(
@@ -207,6 +231,7 @@ def main():
             interval_seconds=5.0, gpu_indices=gpu_indices_for_polling
         )
 
+    _install_sigterm_handler()
     try:
         retry_count = _mark_running(state_dir, shard_id, datasets_config)
         logger.info(
