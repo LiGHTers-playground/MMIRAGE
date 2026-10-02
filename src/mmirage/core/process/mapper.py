@@ -60,18 +60,24 @@ class MMIRAGEMapper:
                 config.export_prompts_dir = export_prompts_dir  # pyright: ignore[reportAttributeAccessIssue]
             self.processors[config.type] = processor_cls(config, shard_id=shard_id)
 
-    def validate_vars(self) -> bool:
+    @staticmethod
+    def validate_vars(input_vars: List[InputVar], output_vars: List[OutputVar]) -> bool:
         """Validate that all output variables are computable.
 
         Checks that each output variable can be computed given the
         available variables (inputs and previously computed outputs).
+        Static so it can run before processors (and models) are loaded.
+
+        Args:
+            input_vars: List of input variable definitions.
+            output_vars: List of output variable definitions.
 
         Returns:
             True if all variables are computable, False otherwise.
         """
-        vars = cast(List[BaseVar], self.input_vars.copy())
+        vars = cast(List[BaseVar], input_vars.copy())
 
-        for output_var in self.output_vars:
+        for output_var in output_vars:
             if not output_var.is_computable(vars):
                 context = list(map(lambda v: v.name, vars))
                 logger.info(
