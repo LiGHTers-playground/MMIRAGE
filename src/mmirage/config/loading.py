@@ -30,7 +30,11 @@ class LoadingParams:
         batch_size: Batch size for processing samples.
 
     Raises:
-        ValueError: If num_shards, shard_id, or batch_size cannot be converted to int.
+        ValueError: If num_shards, shard_id, or batch_size is not an int, if
+            num_shards or batch_size is < 1, if shard_id is outside
+            [0, num_shards), or if num_shards references an unset environment
+            variable. An unset shard_id variable falls back to 0; see
+            is_shard_id_unresolved().
     """
 
     datasets: List[BaseDataLoaderConfig] = field(default_factory=list)
@@ -41,42 +45,39 @@ class LoadingParams:
     batch_size: Union[int, str] = 1
 
     def __post_init__(self):
-        def is_unresolved_env_var(s: str) -> bool:
-            return bool(_UNRESOLVED_ENV_VAR_PATTERN.fullmatch(s.strip()))
-
-        if isinstance(self.num_shards, str):
+        def to_int(name: str, value: Union[int, str]) -> int:
+            if isinstance(value, str) and _UNRESOLVED_ENV_VAR_PATTERN.fullmatch(
+                value.strip()
+            ):
+                raise ValueError(
+                    f"{name}={value!r} references an environment variable that is not set"
+                )
             try:
-                self.num_shards = int(self.num_shards)
-                if self.num_shards < 1:
-                    raise ValueError()
+                return int(value)
             except (ValueError, TypeError):
-                if isinstance(self.num_shards, str) and is_unresolved_env_var(
-                    self.num_shards
-                ):
-                    self.num_shards = 1
-                else:
-                    raise ValueError(
-                        f"Invalid value for num_shards: {self.num_shards!r}"
-                    )
+                raise ValueError(f"Invalid value for {name}: {value!r}") from None
 
-        if isinstance(self.shard_id, str):
-            try:
-                self.shard_id = int(self.shard_id)
-            except (ValueError, TypeError):
-                if isinstance(self.shard_id, str) and is_unresolved_env_var(
-                    self.shard_id
-                ):
-                    self.shard_id = 0
-                else:
-                    raise ValueError(f"Invalid value for shard_id: {self.shard_id!r}")
+        # The launcher loads the config before SLURM_ARRAY_TASK_ID exists, so an
+        # unresolved shard_id falls back to 0 here; shard_process rejects it.
+        # Plain attribute, not a dataclass field: dacite resets non-init fields.
+        self._shard_id_unresolved = isinstance(self.shard_id, str) and bool(
+            _UNRESOLVED_ENV_VAR_PATTERN.fullmatch(self.shard_id.strip())
+        )
+        if self._shard_id_unresolved:
+            self.shard_id = 0
 
-        if isinstance(self.batch_size, str):
-            try:
-                self.batch_size = int(self.batch_size)
-            except (ValueError, TypeError):
-                raise ValueError(f"Invalid value for batch_size: {self.batch_size!r}")
+        self.num_shards = to_int("num_shards", self.num_shards)
+        self.shard_id = to_int("shard_id", self.shard_id)
+        self.batch_size = to_int("batch_size", self.batch_size)
 
-        self.batch_size = max(self.batch_size, 1)
+        if self.num_shards < 1:
+            raise ValueError(f"num_shards must be >= 1, got {self.num_shards}")
+        if not 0 <= self.shard_id < self.num_shards:
+            raise ValueError(
+                f"shard_id must be in [0, {self.num_shards}), got {self.shard_id}"
+            )
+        if self.batch_size < 1:
+            raise ValueError(f"batch_size must be >= 1, got {self.batch_size}")
 
         raw_state_dir = "" if self.state_dir is None else str(self.state_dir)
         self.state_dir = raw_state_dir.strip()
@@ -108,6 +109,14 @@ class LoadingParams:
             int: Shard ID (0-indexed).
         """
         return cast(int, self.shard_id)
+
+    def is_shard_id_unresolved(self) -> bool:
+        """Whether shard_id fell back to 0 because its environment variable was unset.
+
+        Returns:
+            bool: True if shard_id came from an unresolved environment variable.
+        """
+        return self._shard_id_unresolved
 
     def get_batch_size(self) -> int:
         """Get the batch size for processing.

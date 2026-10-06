@@ -163,6 +163,12 @@ def main():
     processing_params = cfg.processing_params
     datasets_config = loading_params.datasets
 
+    if loading_params.is_shard_id_unresolved():
+        raise ValueError(
+            "shard_id references an environment variable that is not set in the "
+            "worker (e.g. SLURM_ARRAY_TASK_ID)"
+        )
+
     if not datasets_config:
         raise ValueError("No datasets provided in config.loading_params.datasets")
 
