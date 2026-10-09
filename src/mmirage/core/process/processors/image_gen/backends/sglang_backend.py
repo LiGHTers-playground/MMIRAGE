@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, 
 try:
     from PIL import Image as PILImage
 except ImportError:  # pragma: no cover
-    PILImage = None  # type: ignore[assignment]
+    PILImage = None
 
 if TYPE_CHECKING:
     # `PILImage` above is the PIL.Image *module*, so it cannot annotate a

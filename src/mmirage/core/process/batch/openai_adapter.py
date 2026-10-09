@@ -137,6 +137,8 @@ class OpenAIBatchAdapter(BatchSubmissionAdapter):
 
         batch_response = client.batches.create(
             input_file_id=file_response.id,
+            # The SDK types this as a Literal of OpenAI's own endpoints, and we
+            # take any path, since base_url can point at a compatible gateway.
             endpoint=openai_config.batch_endpoint,  # pyright: ignore[reportArgumentType]
             completion_window=openai_config.completion_window,
             metadata=metadata,
@@ -158,6 +160,8 @@ class OpenAIBatchAdapter(BatchSubmissionAdapter):
         openai_config = self._require_openai_config(config)
         client = self._create_client(openai_config)
         retrieved = client.batches.retrieve(provider_batch_id)
+        # `parse_submission_result` is typed for dicts and gets SDK objects:
+        # item 6 of #61 calls `.model_dump()` where the answers come in.
         return self.parse_submission_result(raw_result=retrieved)  # pyright: ignore[reportArgumentType]
 
     def retrieve_results(
