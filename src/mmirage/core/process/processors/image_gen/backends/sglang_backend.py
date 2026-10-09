@@ -97,7 +97,7 @@ class SGLangImageBackend:
         negative_prompts: Optional[Sequence[Optional[str]]] = None,
         params: Optional[Dict[str, Any]] = None,
         seeds: Optional[Sequence[Optional[int]]] = None,
-    ) -> List[PILImage]:
+    ) -> List[PILImage]:  # pyright: ignore[reportInvalidTypeForm]
         """Generate one image per prompt and return PIL Images."""
         params = params or {}
         prompts = list(prompts)
@@ -109,7 +109,7 @@ class SGLangImageBackend:
         if seeds is not None and len(seeds) != len(prompts):
             raise ValueError(f"Expected {len(prompts)} seeds, got {len(seeds)}")
 
-        def generate_one(index: int) -> PILImage:
+        def generate_one(index: int) -> PILImage:  # pyright: ignore[reportInvalidTypeForm]
             negative_prompt = (
                 negative_prompts[index] if negative_prompts is not None else None
             )
@@ -135,12 +135,12 @@ class SGLangImageBackend:
         negative_prompt: Optional[str] = None,
         params: Optional[Mapping[str, Any]] = None,
         seed: Optional[int] = None,
-    ) -> PILImage:
+    ) -> PILImage:  # pyright: ignore[reportInvalidTypeForm]
         """Generate a single image and return a PIL Image."""
         payload = self._build_payload(
             prompt=prompt,
             negative_prompt=negative_prompt,
-            params=params or {},
+            params=params or {},  # pyright: ignore[reportArgumentType]
             seed=seed,
         )
         result = self._read_json(
@@ -254,7 +254,7 @@ class SGLangImageBackend:
         return f"{int(width)}x{int(height)}"
 
     @staticmethod
-    def _decode_image_response(result: Dict[str, Any], prompt: str) -> PILImage:
+    def _decode_image_response(result: Dict[str, Any], prompt: str) -> PILImage:  # pyright: ignore[reportInvalidTypeForm]
         try:
             data = result["data"]
             if not isinstance(data, list) or not data:

@@ -137,8 +137,8 @@ class OpenAIBatchAdapter(BatchSubmissionAdapter):
 
         batch_response = client.batches.create(
             input_file_id=file_response.id,
-            endpoint=openai_config.batch_endpoint,
-            completion_window=openai_config.completion_window,
+            endpoint=openai_config.batch_endpoint,  # pyright: ignore[reportArgumentType]
+            completion_window=openai_config.completion_window,  # pyright: ignore[reportArgumentType]
             metadata=metadata,
         )
 
@@ -158,7 +158,7 @@ class OpenAIBatchAdapter(BatchSubmissionAdapter):
         openai_config = self._require_openai_config(config)
         client = self._create_client(openai_config)
         retrieved = client.batches.retrieve(provider_batch_id)
-        return self.parse_submission_result(raw_result=retrieved)
+        return self.parse_submission_result(raw_result=retrieved)  # pyright: ignore[reportArgumentType]
 
     def retrieve_results(
         self,
@@ -325,7 +325,7 @@ class OpenAIBatchAdapter(BatchSubmissionAdapter):
             client_kwargs = {"api_key": api_key}
             if config.base_url:
                 client_kwargs["base_url"] = config.base_url
-            return OpenAI(**client_kwargs)
+            return OpenAI(**client_kwargs)  # pyright: ignore[reportArgumentType]
         except AuthenticationError as exc:
             raise ValueError(f"OpenAI authentication failed: {exc}") from exc
         except Exception as exc:

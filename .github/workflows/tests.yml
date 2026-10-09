@@ -32,3 +32,28 @@ jobs:
 
       - name: Run pytest
         run: pytest tests/
+
+  pyright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install package with dev dependencies
+        run: pip install -e ".[dev]"
+
+      # Installed by hand here and not declared in pyproject because it is only
+      # for type checking: pyright reads the sources and never runs them, and
+      # its real dependencies (torch, CUDA kernels) are not wanted on a CPU runner.
+      - name: Install sglang sources for pyright
+        run: pip install --no-deps sglang==0.5.10
+
+      - name: Run pyright
+        run: pyright

@@ -23,7 +23,7 @@ The `dev` extra installs:
 |---|---|
 | `ruff` | Fast Python linter and formatter |
 | `pre-commit` | Git hooks running ruff lint/format before each commit |
-| `mypy` | Static type checker |
+| `pyright` | Static type checker |
 | `pytest` | Test runner |
 | `ipykernel` | Jupyter kernel for exploratory notebooks |
 
@@ -38,6 +38,7 @@ pre-commit install
 ## Running Tests
 
 ```bash
+source .venv/bin/activate
 pytest tests/
 ```
 
@@ -83,11 +84,13 @@ ruff format .
 
 Ruff configuration (rule selection, ignores) lives in `pyproject.toml` under `[tool.ruff.lint]`. The `Lint` GitHub Actions workflow enforces both lint and formatting on every pull request.
 
-Type-check with mypy:
+Type-check with pyright:
 
 ```bash
-mypy src/mmirage/
+pyright
 ```
+
+pyright also runs in CI on every pull request. Known type errors are silenced line by line with `# pyright: ignore[<rule>]` comments; fix one and remove its comment. New code must be clean.
 
 ---
 
