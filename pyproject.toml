@@ -82,15 +82,5 @@ ignore = ["E501"]
 pythonVersion = "3.12"
 typeCheckingMode = "basic"
 include = ["src/mmirage"]
-# Known type errors; later cleanup PRs remove files from this list one at a time.
-ignore = [
-  "src/mmirage/core/process/batch/openai_adapter.py",
-  "src/mmirage/core/process/batch/orchestrator.py",
-  "src/mmirage/core/process/mapper.py",
-  "src/mmirage/core/process/processors/batch_api/batch_api_processor.py",
-  "src/mmirage/core/process/processors/custom/custom_processor.py",
-  "src/mmirage/core/process/processors/image_gen/backends/sglang_backend.py",
-  "src/mmirage/core/process/processors/image_gen/image_gen_processor.py",
-  "src/mmirage/core/process/processors/llm/llm_processor.py",
-  "src/mmirage/shard_process.py",
-]
+# The type errors we already have are silenced one line at a time with
+# `# pyright: ignore[<rule>]`, so every file stays checked for new ones.

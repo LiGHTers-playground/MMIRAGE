@@ -23,7 +23,7 @@ The `dev` extra installs:
 |---|---|
 | `ruff` | Fast Python linter and formatter |
 | `pre-commit` | Git hooks running ruff lint/format before each commit |
-| `mypy` | Static type checker |
+| `pyright` | Static type checker |
 | `pytest` | Test runner |
 | `ipykernel` | Jupyter kernel for exploratory notebooks |
 
@@ -38,6 +38,7 @@ pre-commit install
 ## Running Tests
 
 ```bash
+source .venv/bin/activate
 pytest tests/
 ```
 
@@ -89,7 +90,7 @@ Type-check with pyright:
 pyright
 ```
 
-pyright also runs in CI on every pull request. Files listed under `ignore` in the `[tool.pyright]` section of `pyproject.toml` are known type debt being removed one file at a time; a new file must be clean.
+pyright also runs in CI on every pull request. Known type errors are silenced line by line with `# pyright: ignore[<rule>]` comments; fix one and remove its comment. New code must be clean.
 
 ---
 
