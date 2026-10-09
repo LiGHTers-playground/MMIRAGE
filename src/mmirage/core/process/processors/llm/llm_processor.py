@@ -160,7 +160,7 @@ class LLMProcessor(BaseProcessor[LLMOutputVar]):
 
         # Import chat templates from sglang if available
         try:
-            from sglang.srt.conversation import chat_templates  # type: ignore
+            from sglang.srt.parser.conversation import chat_templates  # type: ignore
 
             if self.chat_template in chat_templates:
                 conv = chat_templates[self.chat_template].copy()
