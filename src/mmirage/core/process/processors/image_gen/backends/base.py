@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
+from typing import Any, Dict, List, Optional, Protocol, Sequence, runtime_checkable
 
 from PIL.Image import Image as PILImage
 
@@ -19,10 +19,10 @@ class ImageGenerationBackend(Protocol):
 
     def generate_batch(
         self,
-        prompts: List[str],
-        negative_prompts: Optional[List[Optional[str]]],
+        prompts: Sequence[str],
+        negative_prompts: Optional[Sequence[Optional[str]]],
         params: Dict[str, Any],
-        seeds: List[Optional[int]],
+        seeds: Sequence[Optional[int]],
     ) -> List[PILImage]:
         """Generate one image per prompt.
 
