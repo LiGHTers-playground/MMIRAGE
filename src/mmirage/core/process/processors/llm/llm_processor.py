@@ -6,7 +6,7 @@ import json
 import logging
 import time
 from dataclasses import asdict
-from typing import Any, List, override
+from typing import TYPE_CHECKING, Any, List, cast, override
 
 import jinja2
 from pydantic import BaseModel, ValidationError
@@ -23,6 +23,11 @@ except ImportError:
             pass
 
     sgl = DummySGL
+
+if TYPE_CHECKING:
+    # `sglang.Engine` is a lazy import with no usable type. The class itself
+    # lives here, imported for the type checker only so sglang stays optional.
+    from sglang.srt.entrypoints.engine import Engine
 
 from transformers import AutoTokenizer
 
@@ -83,7 +88,9 @@ class LLMProcessor(BaseProcessor[LLMOutputVar]):
         extra = server_kwargs.pop("extra_engine_args", {}) or {}
         server_kwargs.update(extra)
         _load_start = time.monotonic()
-        self.llm = sgl.Engine(**server_kwargs)
+        # The `DummySGL` stand-in above is only there to keep this module
+        # importable; reaching here means sglang is installed.
+        self.llm: Engine = cast("Engine", sgl.Engine(**server_kwargs))
         self._model_load_seconds = time.monotonic() - _load_start
         self.tokenizer = AutoTokenizer.from_pretrained(
             engine_args.server_args.model_path,
@@ -261,7 +268,7 @@ class LLMProcessor(BaseProcessor[LLMOutputVar]):
             text_only_prompts = self.build_prompt(output_var.prompt, text_only_envs)
 
             try:
-                text_only_outputs = self.llm.generate(  # pyright: ignore[reportAttributeAccessIssue]
+                text_only_outputs = self.llm.generate(
                     prompt=text_only_prompts,
                     sampling_params=sampling_params_output,
                 )
@@ -329,7 +336,7 @@ class LLMProcessor(BaseProcessor[LLMOutputVar]):
                     multimodal_image_data.append(imgs)
 
             try:
-                multimodal_outputs = self.llm.generate(  # pyright: ignore[reportAttributeAccessIssue]
+                multimodal_outputs = self.llm.generate(
                     prompt=multimodal_prompts,
                     sampling_params=sampling_params_output,
                     image_data=multimodal_image_data,
@@ -374,6 +381,6 @@ class LLMProcessor(BaseProcessor[LLMOutputVar]):
             return
 
         try:
-            self.llm.shutdown()  # pyright: ignore[reportAttributeAccessIssue]
+            self.llm.shutdown()
         except Exception as e:
             logger.warning(f"Error shutting down LLM: {e}")
