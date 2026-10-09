@@ -138,7 +138,7 @@ class OpenAIBatchAdapter(BatchSubmissionAdapter):
         batch_response = client.batches.create(
             input_file_id=file_response.id,
             endpoint=openai_config.batch_endpoint,  # pyright: ignore[reportArgumentType]
-            completion_window=openai_config.completion_window,  # pyright: ignore[reportArgumentType]
+            completion_window=openai_config.completion_window,
             metadata=metadata,
         )
 
