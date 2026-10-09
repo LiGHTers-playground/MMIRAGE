@@ -325,10 +325,9 @@ class OpenAIBatchAdapter(BatchSubmissionAdapter):
                 "OpenAI API key is missing. set OPENAI_API_KEY. with `export OPENAI_API_KEY=your_api_key` ."
             )
 
-        client_kwargs = {"api_key": api_key}
         if config.base_url:
-            client_kwargs["base_url"] = config.base_url
-        return OpenAI(**client_kwargs)  # pyright: ignore[reportArgumentType]
+            return OpenAI(api_key=api_key, base_url=config.base_url)
+        return OpenAI(api_key=api_key)
 
     @staticmethod
     def _extract_content_text(content_response: Any) -> str:
