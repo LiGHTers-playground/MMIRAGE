@@ -10,7 +10,14 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MOCK_CONFIGS = sorted((REPO_ROOT / "configs").glob("config_mock*.yaml"))
-HEAVY_MODULES = ("openai", "anthropic", "pebble")
+HEAVY_MODULES = (
+    "openai",
+    "anthropic",
+    "pebble",
+    "sglang",
+    "torch",
+    "transformers",
+)
 
 # Runs in a fresh interpreter: pytest's own imports already pollute this one.
 PROBE = """
