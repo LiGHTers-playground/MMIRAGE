@@ -167,7 +167,9 @@ mmirage merge \
 
 The collector prints the run totals, and each merged row carries `input_tokens` and `output_tokens` when the provider reports usage. Token counts are unknown at submission time, so they never appear in the [benchmark report](benchmarking.md).
 
-Each merged row also carries its `shard_id`, and rows are ordered by shard, then by `source_index` within the shard, since every shard counts its rows from 0. When a shard was retried, its rows appear in more than one receipt: the row from the receipt submitted last is kept.
+Each merged row also carries its `shard_id`, and rows are ordered by shard, then by `source_index` within the shard, since every shard counts its rows from 0. When a shard was retried, its rows appear in more than one receipt: the row from the receipt submitted last is kept, unless it is an error and an earlier receipt has a successful answer for that row.
+
+`mmirage merge` writes one file for all the datasets of a config, and merged rows don't record which dataset they came from (`source_index` keeps counting across datasets within a shard). To keep datasets apart, use one config, with its own `metadata_output_path`, per dataset.
 
 ---
 

@@ -885,3 +885,54 @@ def test_build_output_payload_preserves_provider_error_status():
         "status": "error",
         "error_message": "Unrecognized request argument supplied: expected_schema",
     }
+
+
+def test_collect_and_merge_keeps_earlier_success_over_newer_error(
+    tmp_path, monkeypatch
+):
+    from mmirage.core.process.batch.collector import (
+        _read_metadata_records,
+        collect_and_merge,
+    )
+
+    # The retry's request failed, but the first attempt's answer (already paid
+    # for) succeeded: the success must not be replaced by the error.
+    metadata_path = tmp_path / "receipts.jsonl"
+    metadata_path.write_text(
+        "".join(
+            json.dumps(
+                {
+                    "provider": "unit",
+                    "shard_id": 0,
+                    "provider_batch_id": batch_id,
+                    "custom_id_to_source_index": {custom_id: 0},
+                    "submitted_at_utc": submitted_at,
+                }
+            )
+            + "\n"
+            for batch_id, custom_id, submitted_at in [
+                ("batch_first", "answer-text-s0-1", "2026-09-13T10:00:00+00:00"),
+                ("batch_retry", "answer-text-s0-2", "2026-09-13T11:00:00+00:00"),
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    class UnitAdapter:
+        def retrieve_results(self, provider_batch_id, config):
+            if provider_batch_id == "batch_first":
+                return [{"custom_id": "answer-text-s0-1", "generated_text": "first"}]
+            return [{"custom_id": "answer-text-s0-2", "error_message": "rate limited"}]
+
+    monkeypatch.setattr(
+        "mmirage.core.process.batch.collector.BatchAdapterFactory.from_config",
+        lambda config: UnitAdapter(),
+    )
+
+    rows = collect_and_merge(
+        records=_read_metadata_records(str(metadata_path)),
+        provider_configs={"unit": SimpleNamespace(provider="unit")},
+        output_path=str(tmp_path / "merged.jsonl"),
+    )
+
+    assert [row.get("caption") for row in rows] == ["first"]
