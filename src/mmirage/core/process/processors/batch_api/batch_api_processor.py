@@ -68,6 +68,12 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
             raise ValueError(
                 "export_prompts_dir is set but empty; give it a path or leave it unset"
             )
+        if export_prompts_dir is None and not provider_cfg.metadata_output_path.strip():
+            raise ValueError(
+                "metadata_output_path is required to submit batches; set it on the "
+                "batch_api processor in the YAML config, or only export the prompts "
+                "with --export-prompts"
+            )
 
         self._batch_provider_config = provider_cfg
         self._export_prompts_dir = export_prompts_dir
