@@ -108,7 +108,7 @@ The API key is read from the environment (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`)
 | `provider` | `str` | — | Provider identifier: `"openai"` or `"anthropic"` |
 | `max_chunk_bytes` | `int` | `52428800` | Max serialized bytes per batch file (50 MB) |
 | `max_requests_per_chunk` | `int` | `null` | Optional hard cap on requests per chunk |
-| `metadata_output_path` | `str` | `""` | Base path for submission receipt files |
+| `metadata_output_path` | `str` | `""` | Base path for submission receipt files. Required to submit batches; optional with `--export-prompts` |
 | `oversized_request_policy` | `str` | `"isolate"` | `"isolate"` or `"reject"` for requests exceeding `max_chunk_bytes` |
 
 **`provider: openai` fields:**
