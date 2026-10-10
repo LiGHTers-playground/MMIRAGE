@@ -6,26 +6,20 @@ import logging
 import os
 import uuid
 from dataclasses import replace
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, override
 
 import jinja2
 from PIL import Image
 
 from mmirage.core.process.base import BaseProcessor, ProcessorRegistry, TokenCounts
 from mmirage.core.process.batch.orchestrator import BatchSubmissionOrchestrator
-from mmirage.core.process.batch.registry import BatchAdapterFactory
+from mmirage.core.process.batch.registry import BatchAdapterRegistry
 from mmirage.core.process.processors.batch_api.config import (
     BATCH_API_PROCESSOR_TYPE,
     BatchApiOutputVar,
     BatchApiProcessorConfig,
 )
 from mmirage.core.process.variables import VariableEnvironment
-
-try:
-    from typing import override  # Python 3.12+
-except ImportError:  # pragma: no cover
-    from typing_extensions import override  # type: ignore
-
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +74,7 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
         # When export_prompts_dir is set we are in dry-run mode and should not
         # require valid provider credentials because no network calls will be
         # performed.
-        self._batch_adapter = BatchAdapterFactory.from_config(
+        self._batch_adapter = BatchAdapterRegistry.create(
             provider_cfg, allow_missing_credentials=bool(export_prompts_dir)
         )
         self._batch_request_counter = 0
@@ -298,7 +292,7 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
 
         placeholders: List[VariableEnvironment] = []
         for i in range(nb_samples):
-            unique_id = index_to_custom_id.get(i, f"unknown-{i}")
+            unique_id = index_to_custom_id[i]
             placeholder = f"__BATCH_SUBMITTED__:{unique_id}"
             placeholders.append(batch[i].with_variable(output_var.name, placeholder))
 

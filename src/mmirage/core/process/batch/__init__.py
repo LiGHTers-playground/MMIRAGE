@@ -10,7 +10,6 @@ from mmirage.core.process.batch.collector import collect_and_merge
 from mmirage.core.process.batch.openai_adapter import OpenAIBatchAdapter
 from mmirage.core.process.batch.orchestrator import BatchSubmissionOrchestrator
 from mmirage.core.process.batch.registry import (
-    BatchAdapterFactory,
     BatchAdapterRegistry,
 )
 from mmirage.core.process.batch.status_checker import (
@@ -27,7 +26,6 @@ __all__ = [
     "BatchSubmissionOrchestrator",
     "OpenAIBatchAdapter",
     "OpenAIBatchConfig",
-    "BatchAdapterFactory",
     "BatchAdapterRegistry",
     "extract_unique_provider_batches",
     "run_status_checker",
