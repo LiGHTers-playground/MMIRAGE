@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Sequence
+from typing import Any, Dict, List, Mapping
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class BatchMetadataRecord:
 
 
 def _read_metadata_records(
-    metadata_output_paths: Sequence[str],
+    metadata_output_paths: List[str],
 ) -> List[BatchMetadataRecord]:
     """Load valid JSON objects from one or more receipt files.
 
