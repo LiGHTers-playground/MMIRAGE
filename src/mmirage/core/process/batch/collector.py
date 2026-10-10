@@ -123,8 +123,11 @@ def collect_and_merge(
         )
 
     # One row per (shard_id, source_index): a retried shard resubmits its rows under
-    # new batch ids, and the receipt submitted last is the one that counts.
-    rows_by_position: Dict[Tuple[int, int], Tuple[str, Dict[str, Any]]] = {}
+    # new batch ids, and the receipt submitted last is the one that counts, except
+    # that an error never replaces an earlier success.
+    rows_by_position: Dict[
+        Tuple[int, int], Tuple[Tuple[bool, str], Dict[str, Any]]
+    ] = {}
     for pair, mapping in pair_to_mapping.items():
         receipt = pair_to_receipt[pair]
         results = pair_to_results.get(pair, [])
@@ -146,9 +149,10 @@ def collect_and_merge(
                 **usage,
             }
             position = (receipt.shard_id, row["source_index"])
+            rank = ("error_message" not in row, receipt.submitted_at_utc)
             current = rows_by_position.get(position)
-            if current is None or receipt.submitted_at_utc >= current[0]:
-                rows_by_position[position] = (receipt.submitted_at_utc, row)
+            if current is None or rank >= current[0]:
+                rows_by_position[position] = (rank, row)
 
     # Every shard counts its rows from 0, so order by shard first; custom_id keeps
     # the order deterministic should a position ever hold more than one row.
