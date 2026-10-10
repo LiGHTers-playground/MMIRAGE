@@ -123,12 +123,16 @@ def test_batch_api_processor_exports_what_batch_process_sample_buffered(
     assert lines[0]["request"]["messages"][0]["content"] == "Question about Berne"
 
 
+@pytest.mark.parametrize("metadata_output_path", ["", "   "])
 def test_batch_api_processor_requires_metadata_output_path_for_submission(
     unit_provider,
+    metadata_output_path,
 ):
     config = BatchApiProcessorConfig(
         type="batch_api",
-        provider_config=UnitBatchConfig(provider="unit", metadata_output_path=""),
+        provider_config=UnitBatchConfig(
+            provider="unit", metadata_output_path=metadata_output_path
+        ),
     )
 
     processor_cls = ProcessorRegistry.get_processor("batch_api")
