@@ -18,12 +18,17 @@ import logging
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 try:
     from PIL import Image as PILImage
 except ImportError:  # pragma: no cover
-    PILImage = None  # type: ignore[assignment]
+    PILImage = None
+
+if TYPE_CHECKING:
+    # `PILImage` above is the PIL.Image *module*, so it cannot annotate a
+    # single image. The class is PIL.Image.Image.
+    from PIL.Image import Image as PILImageType
 
 logger = logging.getLogger(__name__)
 
@@ -95,9 +100,9 @@ class SGLangImageBackend:
         self,
         prompts: Sequence[str],
         negative_prompts: Optional[Sequence[Optional[str]]] = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[Mapping[str, Any]] = None,
         seeds: Optional[Sequence[Optional[int]]] = None,
-    ) -> List[PILImage]:  # pyright: ignore[reportInvalidTypeForm]
+    ) -> List[PILImageType]:
         """Generate one image per prompt and return PIL Images."""
         params = params or {}
         prompts = list(prompts)
@@ -109,7 +114,7 @@ class SGLangImageBackend:
         if seeds is not None and len(seeds) != len(prompts):
             raise ValueError(f"Expected {len(prompts)} seeds, got {len(seeds)}")
 
-        def generate_one(index: int) -> PILImage:  # pyright: ignore[reportInvalidTypeForm]
+        def generate_one(index: int) -> PILImageType:
             negative_prompt = (
                 negative_prompts[index] if negative_prompts is not None else None
             )
@@ -135,12 +140,12 @@ class SGLangImageBackend:
         negative_prompt: Optional[str] = None,
         params: Optional[Mapping[str, Any]] = None,
         seed: Optional[int] = None,
-    ) -> PILImage:  # pyright: ignore[reportInvalidTypeForm]
+    ) -> PILImageType:
         """Generate a single image and return a PIL Image."""
         payload = self._build_payload(
             prompt=prompt,
             negative_prompt=negative_prompt,
-            params=params or {},  # pyright: ignore[reportArgumentType]
+            params=params or {},
             seed=seed,
         )
         result = self._read_json(
@@ -168,7 +173,7 @@ class SGLangImageBackend:
         *,
         prompt: str,
         negative_prompt: Optional[str],
-        params: Dict[str, Any],
+        params: Mapping[str, Any],
         seed: Optional[int],
     ) -> JsonDict:
         if not prompt or not prompt.strip():
@@ -242,7 +247,7 @@ class SGLangImageBackend:
         return payload
 
     @staticmethod
-    def _extract_size(params: Dict[str, Any]) -> Optional[str]:
+    def _extract_size(params: Mapping[str, Any]) -> Optional[str]:
         if params.get("size"):
             return str(params["size"])
 
@@ -254,7 +259,7 @@ class SGLangImageBackend:
         return f"{int(width)}x{int(height)}"
 
     @staticmethod
-    def _decode_image_response(result: Dict[str, Any], prompt: str) -> PILImage:  # pyright: ignore[reportInvalidTypeForm]
+    def _decode_image_response(result: Dict[str, Any], prompt: str) -> PILImageType:
         try:
             data = result["data"]
             if not isinstance(data, list) or not data:

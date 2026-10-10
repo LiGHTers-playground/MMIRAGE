@@ -57,6 +57,8 @@ class MMIRAGEMapper:
             logger.info(f"✅ Successfully loaded processor of type {config.type}")
 
             if hasattr(config, "export_prompts_dir"):
+                # Item 8 of #61 hands this to the processor instead of writing
+                # it onto a config object that has no such field.
                 config.export_prompts_dir = export_prompts_dir  # pyright: ignore[reportAttributeAccessIssue]
             self.processors[config.type] = processor_cls(config, shard_id=shard_id)
 

@@ -19,7 +19,7 @@ from mmirage.core.process.batch.chunking import BatchRequestChunker, RequestChun
 
 @dataclass
 class _PendingRequest:
-    request: Mapping[str, Any]
+    request: Dict[str, Any]
     source_index: int  # original row index of the data sample within the input dataset
 
 
@@ -49,7 +49,7 @@ class BatchSubmissionOrchestrator:
 
     def add_requests(
         self,
-        requests: Sequence[Mapping[str, Any]],
+        requests: Sequence[Dict[str, Any]],
         source_indices: Sequence[int],
         model_params_snapshot: Optional[Mapping[str, Any]] = None,
     ) -> List[BatchSubmissionResult]:
@@ -86,7 +86,7 @@ class BatchSubmissionOrchestrator:
             return []
 
         pending_requests = [entry.request for entry in self._pending]
-        chunks = self.chunker.chunk_requests(pending_requests)  # pyright: ignore[reportArgumentType]
+        chunks = self.chunker.chunk_requests(pending_requests)
         chunk_groups = self._split_pending_entries_by_chunks(chunks)
 
         groups_to_submit: List[tuple[List[_PendingRequest], RequestChunk]] = []
@@ -117,7 +117,7 @@ class BatchSubmissionOrchestrator:
             else:
                 raw_result = self.adapter.submit_chunk(
                     chunk_id=chunk_id,
-                    requests=requests,  # pyright: ignore[reportArgumentType]
+                    requests=requests,
                     config=self.config,
                 )
                 parsed_result = self.adapter.parse_submission_result(
