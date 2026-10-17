@@ -9,13 +9,17 @@ For a user-facing overview of the pipeline and architecture, see
 
 ## Setting Up a Development Environment
 
-Clone the repository and install all dependencies including dev tools:
+Clone the repository, create a virtual environment and install all dependencies including dev tools:
 
 ```bash
 git clone git@github.com:EPFLiGHT/MMIRAGE.git
 cd MMIRAGE
+python -m venv .venv
+source .venv/bin/activate
 pip install -e ".[dev]"
 ```
+
+The commands below (`pytest`, `pyright`, `pre-commit`) assume this environment is active.
 
 The `dev` extra installs:
 
