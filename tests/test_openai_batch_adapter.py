@@ -6,7 +6,6 @@ import pytest
 from mmirage.config.openai_batch import OpenAIBatchConfig
 from mmirage.core.process.batch.adapter import BatchSubmissionResult
 from mmirage.core.process.batch.registry import (
-    BatchAdapterFactory,
     BatchAdapterRegistry,
 )
 
@@ -222,7 +221,7 @@ def test_factory_resolves_openai_adapter_from_registry():
     BatchAdapterRegistry.clear()
     config = OpenAIBatchConfig(model="gpt-4.1-mini")
 
-    adapter = BatchAdapterFactory.from_config(config)
+    adapter = BatchAdapterRegistry.create(config)
 
     assert isinstance(adapter, OpenAIBatchAdapter)
 

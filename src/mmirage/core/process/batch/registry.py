@@ -91,19 +91,3 @@ class BatchAdapterRegistry:
                     f"Missing environment variable(s) for provider '{config.provider}': {missing}"
                 )
         return adapter_cls()
-
-
-class BatchAdapterFactory:
-    """Compatibility alias around registry-based adapter creation."""
-
-    @classmethod
-    def from_config(
-        cls,
-        config: BatchProviderConfig,
-        allow_missing_credentials: bool = False,
-    ) -> BatchSubmissionAdapter:
-        """Create an adapter from provider config via registry resolution."""
-        return BatchAdapterRegistry.create(
-            config,
-            allow_missing_credentials=allow_missing_credentials,
-        )
