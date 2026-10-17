@@ -185,31 +185,35 @@ class OpenAIBatchAdapter(BatchSubmissionAdapter):
                 "Please retry after the provider marks it completed and produces an output file."
             ) from None
 
-        content_file_id = output_file_id or error_file_id
-        if not content_file_id:
+        # A partially failed batch has both files; read the output first, then the errors.
+        content_file_ids = [
+            file_id for file_id in (output_file_id, error_file_id) if file_id
+        ]
+        if not content_file_ids:
             raise ValueError(
                 f"Batch '{provider_batch_id}' completed, but neither output_file_id nor error_file_id was returned."
             ) from None
 
-        content_response = client.files.content(content_file_id)
-        jsonl_text = self._extract_content_text(content_response)
-
         rows: List[Dict[str, Any]] = []
-        for line in jsonl_text.splitlines():
-            raw = line.strip()
-            if not raw:
-                continue
-            row = dict(json.loads(raw))
-            error_message = self._extract_error_message(row)
-            if error_message:
-                row.setdefault("status", "error")
-                row["error_message"] = error_message
-            if "generated_text" not in row:
-                generated_text = self._extract_generated_text(row)
-                if generated_text:
-                    row["generated_text"] = generated_text
-            row.update(self._extract_usage(row))
-            rows.append(row)
+        for content_file_id in content_file_ids:
+            content_response = client.files.content(content_file_id)
+            jsonl_text = self._extract_content_text(content_response)
+
+            for line in jsonl_text.splitlines():
+                raw = line.strip()
+                if not raw:
+                    continue
+                row = dict(json.loads(raw))
+                error_message = self._extract_error_message(row)
+                if error_message:
+                    row.setdefault("status", "error")
+                    row["error_message"] = error_message
+                if "generated_text" not in row:
+                    generated_text = self._extract_generated_text(row)
+                    if generated_text:
+                        row["generated_text"] = generated_text
+                row.update(self._extract_usage(row))
+                rows.append(row)
 
         return rows
 

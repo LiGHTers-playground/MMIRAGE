@@ -59,7 +59,7 @@ These fields apply to every provider.
 | `provider` | `str` | — | Provider identifier: `"openai"` or `"anthropic"`. |
 | `max_chunk_bytes` | `int` | `52428800` | Maximum JSONL file size per batch upload (50 MB). |
 | `max_requests_per_chunk` | `int` | `null` | Optional hard cap on number of requests in a chunk. |
-| `metadata_output_path` | `str` | `""` | Base path for batch job metadata receipt files. Suffixes like `.text.<run_id>.jsonl` and `.multimodal.<run_id>.jsonl` will be appended. |
+| `metadata_output_path` | `str` | `""` | Base path for batch job metadata receipt files. **Required to submit batches** (the processor refuses to start without it); optional with `--export-prompts`. Suffixes like `.text.<run_id>.jsonl` and `.multimodal.<run_id>.jsonl` will be appended. |
 | `oversized_request_policy` | `str` | `"isolate"` | Policy for requests exceeding `max_chunk_bytes`: `"isolate"` (dedicated chunk) or `"reject"` (fail fast). |
 
 ### `provider: openai`
