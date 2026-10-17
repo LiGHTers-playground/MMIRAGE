@@ -267,7 +267,7 @@ class LLMProcessor(BaseProcessor[LLMOutputVar]):
             text_only_prompts = self.build_prompt(output_var.prompt, text_only_envs)
 
             try:
-                text_only_outputs = self.llm.generate(
+                text_only_outputs = self.llm.generate(  # pyright: ignore[reportAttributeAccessIssue]
                     prompt=text_only_prompts,
                     sampling_params=sampling_params_output,
                 )
@@ -335,7 +335,7 @@ class LLMProcessor(BaseProcessor[LLMOutputVar]):
                     multimodal_image_data.append(imgs)
 
             try:
-                multimodal_outputs = self.llm.generate(
+                multimodal_outputs = self.llm.generate(  # pyright: ignore[reportAttributeAccessIssue]
                     prompt=multimodal_prompts,
                     sampling_params=sampling_params_output,
                     image_data=multimodal_image_data,
@@ -380,6 +380,6 @@ class LLMProcessor(BaseProcessor[LLMOutputVar]):
             return
 
         try:
-            self.llm.shutdown()
+            self.llm.shutdown()  # pyright: ignore[reportAttributeAccessIssue]
         except Exception as e:
             logger.warning(f"Error shutting down LLM: {e}")

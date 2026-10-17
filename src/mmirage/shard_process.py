@@ -103,7 +103,7 @@ def _cast_image_columns(ds: DatasetLike, cols: List[str]) -> DatasetLike:
         for col in cols:
             for split in list(ds.keys()):
                 if col in ds[split].column_names:
-                    ds[split] = _cast_column(ds[split], col)
+                    ds[split] = _cast_column(ds[split], col)  # pyright: ignore[reportArgumentType]
     else:
         for col in cols:
             if col in ds.column_names:

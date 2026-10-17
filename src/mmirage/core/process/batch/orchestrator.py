@@ -84,7 +84,7 @@ class BatchSubmissionOrchestrator:
             return []
 
         pending_requests = [entry.request for entry in self._pending]
-        chunks = self.chunker.chunk_requests(pending_requests)
+        chunks = self.chunker.chunk_requests(pending_requests)  # pyright: ignore[reportArgumentType]
         chunk_groups = self._split_pending_entries_by_chunks(chunks)
 
         groups_to_submit: List[tuple[List[_PendingRequest], RequestChunk]] = []
@@ -115,7 +115,7 @@ class BatchSubmissionOrchestrator:
             else:
                 raw_result = self.adapter.submit_chunk(
                     chunk_id=chunk_id,
-                    requests=requests,
+                    requests=requests,  # pyright: ignore[reportArgumentType]
                     config=self.config,
                 )
                 parsed_result = self.adapter.parse_submission_result(

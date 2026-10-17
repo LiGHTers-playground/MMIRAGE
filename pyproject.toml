@@ -50,7 +50,7 @@ gpu = [
 dev = [
   "ruff>=0.16",
   "pre-commit>=4.0",
-  "mypy>=1.8.0",
+  "pyright>=1.1",
   "ipykernel",
   "pytest",
 ]
@@ -77,3 +77,10 @@ ignore = ["E501"]
 [tool.ruff.lint.per-file-ignores]
 # Sphinx conf.py adjusts sys.path before imports
 "docs/conf.py" = ["E402"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+include = ["src/mmirage"]
+# The type errors we already have are silenced one line at a time with
+# `# pyright: ignore[<rule>]`, so every file stays checked for new ones.

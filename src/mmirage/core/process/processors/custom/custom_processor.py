@@ -58,7 +58,7 @@ class CustomProcessor(BaseProcessor[CustomOutputVar]):
             max_workers=self.config.max_workers,
             context=multiprocessing.get_context(self.config.start_method),
             initializer=initialize_worker,
-            initargs=(self.config.script_path, self.config.function_name),
+            initargs=(self.config.script_path, self.config.function_name),  # pyright: ignore[reportArgumentType]
         )
 
         self._load_time = time.time() - start_time
@@ -107,7 +107,9 @@ class CustomProcessor(BaseProcessor[CustomOutputVar]):
         future_to_index = {}
         for index, row_dict in enumerate(row_dicts):
             future = self._pool.schedule(
-                execute_custom_function, args=(row_dict,), timeout=timeout_seconds
+                execute_custom_function,
+                args=(row_dict,),  # pyright: ignore[reportArgumentType]
+                timeout=timeout_seconds,  # pyright: ignore[reportArgumentType]
             )
             future_to_index[future] = index
 
