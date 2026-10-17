@@ -117,7 +117,7 @@ The API key is read from the environment (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`)
 |---|---|---|---|
 | `model` | `str` | `gpt-4.1-mini` | Model name for chat completion requests |
 | `batch_endpoint` | `str` | `"/v1/chat/completions"` | Target endpoint used by OpenAI batch jobs |
-| `completion_window` | `str` | `"24h"` | OpenAI batch completion window |
+| `completion_window` | `str` | `"24h"` | OpenAI batch completion window (only `"24h"` is supported) |
 | `base_url` | `str` | `null` | Optional base URL for API-compatible gateways |
 | `metadata` | `dict` | `{}` | Key-value pairs sent on batch creation |
 

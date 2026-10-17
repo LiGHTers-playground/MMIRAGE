@@ -1,7 +1,7 @@
 """OpenAI-specific batch configuration."""
 
 from dataclasses import dataclass, field
-from typing import Dict, Optional
+from typing import Dict, Literal, Optional
 
 from mmirage.config.batch_provider import BatchProviderConfig
 
@@ -22,7 +22,7 @@ class OpenAIBatchConfig(BatchProviderConfig):
     provider: str = "openai"
     model: str = "gpt-4.1-mini"
     batch_endpoint: str = "/v1/chat/completions"
-    completion_window: str = "24h"
+    completion_window: Literal["24h"] = "24h"
     base_url: Optional[str] = None
     metadata: Dict[str, str] = field(default_factory=dict)
 

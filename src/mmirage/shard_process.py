@@ -10,7 +10,7 @@ import sys
 import traceback
 from typing import Any, Dict, List, Optional
 
-from datasets import DatasetDict
+from datasets import Dataset, DatasetDict
 
 from mmirage.cli_utils.runtime import non_empty_path
 from mmirage.config.utils import load_mmirage_config
@@ -89,7 +89,7 @@ def _cast_image_columns(ds: DatasetLike, cols: List[str]) -> DatasetLike:
                 normalized.append(v)
         return {col: normalized}
 
-    def _cast_column(dataset: DatasetLike, col: str) -> DatasetLike:
+    def _cast_column(dataset: Dataset, col: str) -> Dataset:
         dataset = dataset.map(
             _normalise_col,
             batched=True,
@@ -103,7 +103,7 @@ def _cast_image_columns(ds: DatasetLike, cols: List[str]) -> DatasetLike:
         for col in cols:
             for split in list(ds.keys()):
                 if col in ds[split].column_names:
-                    ds[split] = _cast_column(ds[split], col)  # pyright: ignore[reportArgumentType]
+                    ds[split] = _cast_column(ds[split], col)
     else:
         for col in cols:
             if col in ds.column_names:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
+from typing import Any, List, Mapping, Optional, Protocol, Sequence, runtime_checkable
 
 from PIL.Image import Image as PILImage
 
@@ -19,24 +19,24 @@ class ImageGenerationBackend(Protocol):
 
     def generate_batch(
         self,
-        prompts: List[str],
-        negative_prompts: Optional[List[Optional[str]]],
-        params: Dict[str, Any],
-        seeds: List[Optional[int]],
+        prompts: Sequence[str],
+        negative_prompts: Optional[Sequence[Optional[str]]],
+        params: Mapping[str, Any],
+        seeds: Sequence[Optional[int]],
     ) -> List[PILImage]:
         """Generate one image per prompt.
 
         Args:
             prompts: Positive prompt strings, one per sample.
-            negative_prompts: Optional list of negative prompts aligned with
+            negative_prompts: Optional negative prompts aligned with
                 ``prompts``.  ``None`` means no negative prompts at all;
                 individual ``None`` elements mean no negative prompt for that
                 sample.
             params: Shared generation kwargs (width, height,
                 num_inference_steps, guidance_scale, …).
             seeds: Per-sample integer seeds for deterministic generation, or
-                ``None`` elements for unseeded samples.  The list is always
-                the same length as ``prompts``.
+                ``None`` elements for unseeded samples.  Always the same
+                length as ``prompts``.
 
         Returns:
             List of ``PIL.Image`` objects, one per prompt, in the same order.
@@ -48,7 +48,7 @@ class ImageGenerationBackend(Protocol):
         *,
         prompt: str,
         negative_prompt: Optional[str] = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[Mapping[str, Any]] = None,
         seed: Optional[int] = None,
     ) -> PILImage:
         """Generate a single image for one prompt."""
