@@ -180,6 +180,10 @@ def collect_bench_stats(cfg: MMirageConfig) -> Dict[str, Any]:
     per_shard: List[Dict[str, Any]] = []
 
     total_rows: int = 0
+    # Output-side row counts; None until at least one shard reports the value.
+    total_rows_written: Optional[int] = None
+    total_rows_filtered: Optional[int] = None
+    total_rows_dropped_by_error: Optional[int] = None
     sum_runtime: float = 0.0
     runtimes: List[float] = []
     gpu_util_weighted: List[float] = []  # util * rows for weighted mean
@@ -208,6 +212,14 @@ def collect_bench_stats(cfg: MMirageConfig) -> Dict[str, Any]:
             runtimes.append(s.runtime_seconds)
         if s.rows_processed is not None:
             total_rows += s.rows_processed
+        if s.rows_written is not None:
+            total_rows_written = (total_rows_written or 0) + s.rows_written
+        if s.rows_filtered is not None:
+            total_rows_filtered = (total_rows_filtered or 0) + s.rows_filtered
+        if s.rows_dropped_by_error is not None:
+            total_rows_dropped_by_error = (
+                total_rows_dropped_by_error or 0
+            ) + s.rows_dropped_by_error
         if s.gpu_util_mean is not None and s.rows_processed:
             gpu_util_weighted.append(s.gpu_util_mean * s.rows_processed)
             gpu_total_rows_for_weight += s.rows_processed
@@ -283,6 +295,9 @@ def collect_bench_stats(cfg: MMirageConfig) -> Dict[str, Any]:
         "total_shards": num_shards,
         "completed_shards": sum(1 for e in per_shard if e.get("status") == "success"),
         "total_rows_processed": total_rows if total_rows > 0 else None,
+        "total_rows_written": total_rows_written,
+        "total_rows_filtered": total_rows_filtered,
+        "total_rows_dropped_by_error": total_rows_dropped_by_error,
         "wall_clock_runtime_seconds": wall_clock,
         "wall_clock_runtime_human": format_duration(wall_clock),
         "sum_shard_runtime_seconds": round(sum_runtime, 3) if runtimes else None,

@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import humanize
-from datasets import DatasetDict
+from datasets import Dataset, DatasetDict
 
 from mmirage.core.loader.base import BaseDataLoaderConfig, DatasetLike
 
@@ -36,7 +36,14 @@ class ShardStats:
     """Per-shard benchmark statistics recorded at completion."""
 
     runtime_seconds: Optional[float] = None
+    # rows_processed: input rows in this shard (drives throughput).
+    # rows_written: output rows saved to disk; 0 means no shard_* folder was written.
+    # rows_filtered: input rows intentionally dropped by a processor.
+    # rows_dropped_by_error: input rows lost to processor errors.
     rows_processed: Optional[int] = None
+    rows_written: Optional[int] = None
+    rows_filtered: Optional[int] = None
+    rows_dropped_by_error: Optional[int] = None
     throughput_rows_per_sec: Optional[float] = None
     gpu_util_mean: Optional[float] = None
     gpu_util_min: Optional[float] = None
@@ -72,6 +79,9 @@ class ShardStats:
         return cls(
             runtime_seconds=_opt_float(data.get("runtime_seconds")),
             rows_processed=_opt_int(data.get("rows_processed")),
+            rows_written=_opt_int(data.get("rows_written")),
+            rows_filtered=_opt_int(data.get("rows_filtered")),
+            rows_dropped_by_error=_opt_int(data.get("rows_dropped_by_error")),
             throughput_rows_per_sec=_opt_float(data.get("throughput_rows_per_sec")),
             gpu_util_mean=_opt_float(data.get("gpu_util_mean")),
             gpu_util_min=_opt_float(data.get("gpu_util_min")),
@@ -124,6 +134,9 @@ class ShardStats:
             if inference_runtime is not None
             else None,
             "rows_processed": self.rows_processed,
+            "rows_written": self.rows_written,
+            "rows_filtered": self.rows_filtered,
+            "rows_dropped_by_error": self.rows_dropped_by_error,
             "throughput_rows_per_sec": self.throughput_rows_per_sec,
             "gpu_util_mean": self.gpu_util_mean,
             "gpu_util_min": self.gpu_util_min,
@@ -331,22 +344,51 @@ def _count_rows(ds: DatasetLike) -> int:
     return len(ds)
 
 
+def _drop_empty_splits(ds: DatasetLike) -> Optional[DatasetLike]:
+    """Return the dataset without its 0-row splits, or None if nothing is left.
+
+    A 0-row dataset must never reach `_save_dataset_atomic`: `save_to_disk`
+    either fails outright (with an `Image` column) or writes a folder that
+    `load_from_disk` cannot reload, and `cast_column` on 0 rows raises.
+    """
+    if isinstance(ds, DatasetDict):
+        kept = {name: split for name, split in ds.items() if len(split) > 0}
+        dropped = [name for name in ds if name not in kept]
+        if dropped:
+            logger.info(f"Dropping 0-row split(s) before save: {dropped}")
+        return DatasetDict(kept) if kept else None
+    return ds if len(ds) > 0 else None
+
+
+def _shard_split(split_ds: Dataset, num_shards: int, shard_id: int) -> Dataset:
+    """Shard a single dataset, returning an empty dataset for out-of-range shards.
+
+    `Dataset.shard` raises `IndexError` when the dataset has fewer rows than
+    `num_shards` and `shard_id` falls past its last row.
+    """
+    if shard_id >= len(split_ds):
+        return split_ds.select([])
+    return split_ds.shard(num_shards=num_shards, index=shard_id)
+
+
 def _shard_dataset(ds: DatasetLike, num_shards: int, shard_id: int) -> DatasetLike:
     """Shard a dataset or dataset dict."""
     if isinstance(ds, DatasetDict):
         return DatasetDict(
             {
-                split: split_ds.shard(num_shards=num_shards, index=shard_id)
+                split: _shard_split(split_ds, num_shards, shard_id)
                 for split, split_ds in ds.items()
             }
         )
-    return ds.shard(num_shards=num_shards, index=shard_id)
+    return _shard_split(ds, num_shards, shard_id)
 
 
-def _remove_columns(ds: DatasetLike) -> List[str]:
-    """Get columns to remove from dataset if enabled."""
-    if isinstance(ds, DatasetDict):
-        return list(set(x for split_ds in ds.values() for x in split_ds.column_names))
+def _remove_columns(ds: Dataset) -> List[str]:
+    """Get columns to remove from a dataset (or one split of a dataset dict) if enabled.
+
+    Each split of a `DatasetDict` must be mapped with its own column names:
+    `DatasetDict.map(remove_columns=...)` raises when a split lacks a column.
+    """
     return ds.column_names
 
 

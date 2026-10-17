@@ -10,7 +10,7 @@ import sys
 import traceback
 from typing import Any, Dict, List, Optional
 
-from datasets import DatasetDict
+from datasets import Dataset, DatasetDict
 
 from mmirage.cli_utils.runtime import non_empty_path
 from mmirage.config.utils import load_mmirage_config
@@ -25,6 +25,7 @@ from mmirage.shard_utils import (
     _cleanup_old_shard_data,
     _count_rows,
     _dataset_out_dir,
+    _drop_empty_splits,
     _mark_failure,
     _mark_running,
     _mark_success,
@@ -138,6 +139,35 @@ def rewrite_batch(
     return rendered_list
 
 
+def _map_split(
+    split_ds: Dataset,
+    mapper: MMIRAGEMapper,
+    renderer: TemplateRenderer,
+    image_base_path: Optional[str],
+    batch_size: int,
+    remove_columns: bool,
+    desc: str,
+) -> Dataset:
+    """Map one dataset (or one split of a dataset dict) through ``rewrite_batch``.
+
+    Columns are removed per split so a ``DatasetDict`` whose splits have
+    different columns does not fail on a column missing from one of them.
+    """
+    return split_ds.map(
+        rewrite_batch,
+        batched=True,
+        batch_size=batch_size,
+        load_from_cache_file=False,
+        desc=desc,
+        fn_kwargs={
+            "mapper": mapper,
+            "renderer": renderer,
+            "image_base_path": image_base_path,
+        },
+        remove_columns=_remove_columns(split_ds) if remove_columns else [],
+    )
+
+
 def main():
     """
     Process a single shard of the dataset.
@@ -229,6 +259,15 @@ def main():
             f"→ {total_rows} total rows; this logical shard has {shard_rows} rows."
         )
 
+        if shard_rows == 0:
+            # Nothing to process: skip model loading and record an empty success.
+            logger.info(
+                f"Logical shard {shard_id} has no input rows; marking success "
+                "without loading processors."
+            )
+            _mark_success(state_dir, stats=ShardStats(rows_processed=0, rows_written=0))
+            return
+
         mapper = MMIRAGEMapper(
             cfg.processors,
             processing_params.inputs,
@@ -244,34 +283,55 @@ def main():
             if collect_stats and gpu_poller is not None:
                 gpu_poller.start()
 
-            ds_processed_all: List[DatasetLike] = []
+            ds_processed_all: List[Optional[DatasetLike]] = []
             for ds_idx, ds_shard in enumerate(ds_all_shard):
                 ds_config = datasets_config[ds_idx]
-                if processing_params.remove_columns:
-                    remove_columns = _remove_columns(ds_shard)
-                else:
-                    remove_columns = []
 
                 logger.info(
                     f"Processing dataset {ds_idx} for shard {shard_id}: "
                     f"image_base_path={ds_config.image_base_path}, output_dir={ds_config.output_dir}"
                 )
 
-                ds_processed = ds_shard.map(
-                    rewrite_batch,
-                    batched=True,
-                    batch_size=loading_params.get_batch_size(),
-                    load_from_cache_file=False,
-                    desc=f"Shard {shard_id}/{last_shard_id} dataset {ds_idx}",
-                    fn_kwargs={
-                        "mapper": mapper,
-                        "renderer": renderer,
-                        "image_base_path": ds_config.image_base_path,
-                    },
-                    remove_columns=remove_columns,
-                )
-                # Drain stateful batch accumulators once this dataset map iteration finishes.
+                desc = f"Shard {shard_id}/{last_shard_id} dataset {ds_idx}"
+                ds_processed: DatasetLike
+                if isinstance(ds_shard, DatasetDict):
+                    ds_processed = DatasetDict(
+                        {
+                            split: _map_split(
+                                split_ds,
+                                mapper=mapper,
+                                renderer=renderer,
+                                image_base_path=ds_config.image_base_path,
+                                batch_size=loading_params.get_batch_size(),
+                                remove_columns=processing_params.remove_columns,
+                                desc=f"{desc} split {split}",
+                            )
+                            for split, split_ds in ds_shard.items()
+                        }
+                    )
+                else:
+                    ds_processed = _map_split(
+                        ds_shard,
+                        mapper=mapper,
+                        renderer=renderer,
+                        image_base_path=ds_config.image_base_path,
+                        batch_size=loading_params.get_batch_size(),
+                        remove_columns=processing_params.remove_columns,
+                        desc=desc,
+                    )
+                # Drain stateful batch accumulators once every split of this dataset is mapped.
                 mapper.finalize_processors()
+
+                # A 0-row dataset cannot be cast or saved; None means "nothing to write".
+                ds_to_save = _drop_empty_splits(ds_processed)
+                if ds_to_save is None:
+                    logger.info(
+                        f"Shard {shard_id} wrote 0 rows for dataset {ds_idx}; "
+                        "no output folder will be created."
+                    )
+                    ds_processed_all.append(None)
+                    continue
+                ds_processed = ds_to_save
 
                 image_cols = _image_path_schema_cols(
                     processing_params.outputs,
@@ -295,6 +355,8 @@ def main():
             for ds_idx, (ds_config, ds_processed) in enumerate(
                 zip(datasets_config, ds_processed_all)
             ):
+                if ds_processed is None:
+                    continue
                 out_dir = _dataset_out_dir(shard_id, ds_config)
                 _save_dataset_atomic(ds_processed, out_dir)
                 logger.info(f"✅ Saved dataset {ds_idx} shard in: {out_dir}")
@@ -319,8 +381,14 @@ def main():
                     num_gpus = int(tp)
                     break
 
+            # Datasets that produced 0 rows were replaced by None and never saved.
+            rows_written = sum(
+                _count_rows(ds) for ds in ds_processed_all if ds is not None
+            )
+
             stats = ShardStats(
                 rows_processed=shard_rows,
+                rows_written=rows_written,
                 gpu_util_mean=gpu_info["mean"],
                 gpu_util_min=gpu_info["min"],
                 gpu_util_max=gpu_info["max"],
