@@ -157,9 +157,9 @@ loading_params:
 |---|---|---|---|
 | `state_dir` | `str` | `~/.cache/MMIRAGE/state_dir` | Shared directory for shard state, retry markers, and status files |
 | `datasets` | `list` | `[]` | List of dataset configurations (see below) |
-| `num_shards` | `int` or env var | `1` | Total number of shards to split datasets into |
-| `shard_id` | `int` or env var | `0` | Index of this shard (0-based). In SLURM use `"$SLURM_ARRAY_TASK_ID"` |
-| `batch_size` | `int` | `1` | Batch size for processing samples |
+| `num_shards` | `int` or env var | `1` | Total number of shards to split datasets into. Must be `>= 1`; an unset env var is an error |
+| `shard_id` | `int` or env var | `0` | Index of this shard, in `[0, num_shards)`. In SLURM use `"$SLURM_ARRAY_TASK_ID"`. If the variable is unset, the launcher uses `0`, but a shard worker refuses to start |
+| `batch_size` | `int` | `1` | Batch size for processing samples. Must be `>= 1` |
 
 ### `loading_params.datasets[*]`
 

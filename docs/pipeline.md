@@ -58,7 +58,11 @@ During loading:
 - `${ENV_VAR}` references in string values are expanded from the process environment.
 - The raw dict is validated and cast to typed dataclasses via `dacite`.
 - `shard_id` set to `"$SLURM_ARRAY_TASK_ID"` is resolved to the integer value
-  of that environment variable at load time.
+  of that environment variable at load time. If the variable is unset, the
+  launcher falls back to `0`, but the shard worker (`mmirage.shard_process`)
+  stops with an error instead of silently processing shard 0.
+- `num_shards >= 1`, `0 <= shard_id < num_shards` and `batch_size >= 1` are
+  checked; invalid values raise an error.
 
 If required fields are missing or types do not match, MMIRAGE reports a clear
 error before doing any work.
