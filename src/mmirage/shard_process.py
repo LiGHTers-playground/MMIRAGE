@@ -13,7 +13,6 @@ from typing import Any, Dict, List, Optional
 from datasets import DatasetDict
 
 from mmirage.cli_utils.runtime import non_empty_path
-from mmirage.config.config import ProcessingParams
 from mmirage.config.utils import load_mmirage_config
 from mmirage.core.loader.base import DatasetLike
 from mmirage.core.loader.utils import load_datasets_from_configs
@@ -126,36 +125,17 @@ def rewrite_batch(
         image_base_path: Optional base directory for resolving relative image paths.
     Returns:
         Dictionary mapping output keys to lists of rendered values.
-    """
-    batch_environment = mapper.rewrite_batch(batch, image_base_path)
-    rendered_list = renderer.batch_render(batch_environment)
-    return rendered_list
-
-
-def _validate_variables(processing_params: ProcessingParams) -> None:
-    """Check output vars and output_schema variables before loading processors.
-
     Raises:
-        ValueError: If an output variable is not computable, or if output_schema
-            references a variable that is neither an input nor an output.
+        ValueError: If variables are not computable given the configuration.
     """
-    inputs, outputs = processing_params.inputs, processing_params.outputs
-    if not MMIRAGEMapper.validate_vars(inputs, outputs):
+    if not mapper.validate_vars():
         raise ValueError(
             "Uncomputable variables detected. Verify your configuration and make sure that there is no undefined variables"
         )
 
-    available = {var.name for var in [*inputs, *outputs]}
-    unknown = {
-        key: sorted(TemplateRenderer({key: tmpl}).undeclared_variables(available))
-        for key, tmpl in processing_params.output_schema.items()
-    }
-    unknown = {key: names for key, names in unknown.items() if names}
-    if unknown:
-        raise ValueError(
-            f"output_schema references unknown variables (by schema key): {unknown}. "
-            f"Available variables: {sorted(available)}"
-        )
+    batch_environment = mapper.rewrite_batch(batch, image_base_path)
+    rendered_list = renderer.batch_render(batch_environment)
+    return rendered_list
 
 
 def main():
@@ -232,8 +212,6 @@ def main():
         logger.info(
             f"Starting shard {shard_id}/{last_shard_id} (attempt #{retry_count})"
         )
-
-        _validate_variables(processing_params)
 
         if retry_count > 1:
             for ds_config in datasets_config:

@@ -136,10 +136,10 @@ as a dictionary to your Python function, running in a separate process pool
 Once all output variables are computed, the `TemplateRenderer` applies the
 `output_schema` Jinja2 template to produce the final sample dict.
 
-Before any processor is started, each shard checks that every variable used in
-`output_schema` (top-level name, e.g. `formatted` in `{{ formatted.question }}`)
-is an input or an output. An unknown name, such as a typo, fails the shard with
-the offending schema keys instead of rendering an empty string.
+When the config loads, every variable used in `output_schema` (top-level name,
+e.g. `formatted` in `{{ formatted.question }}`) must be an input or an output.
+An unknown name, such as a typo, rejects the config with the offending schema
+keys, before anything is submitted, instead of rendering an empty string.
 
 Each field in the schema that is a plain `{{ var }}` reference is substituted
 directly (preserving the original Python type — list, dict, PIL Image, etc.).

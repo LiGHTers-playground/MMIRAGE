@@ -6,8 +6,10 @@ import sys
 import pytest
 
 from mmirage import shard_process
+from mmirage.config.config import ProcessingParams
+from mmirage.config.utils import load_mmirage_config
+from mmirage.core.process.variables import InputVar
 from mmirage.core.writer.renderer import TemplateRenderer
-from mmirage.shard_utils import read_status, shard_state_dir
 
 
 def test_typo_variable_reported():
@@ -61,25 +63,39 @@ processing_params:
 """
 
 
-def test_shard_fails_before_processors_start_on_schema_typo(tmp_path, monkeypatch):
+def _write_config(tmp_path):
     script = tmp_path / "script.py"
     script.write_text("def process(row):\n    return row['text']\n")
     (tmp_path / "data.jsonl").write_text(json.dumps({"text": "hi"}) + "\n")
     config = tmp_path / "config.yaml"
     config.write_text(CUSTOM_CONFIG.format(script=script, tmp=tmp_path))
+    return config
 
-    class MapperMustNotBeBuilt(shard_process.MMIRAGEMapper):
-        def __init__(self, *args, **kwargs):
-            raise AssertionError("processors were started before schema validation")
 
-    monkeypatch.setattr(shard_process, "MMIRAGEMapper", MapperMustNotBeBuilt)
+def test_processing_params_rejects_unknown_schema_variable():
+    with pytest.raises(ValueError, match=r"typo_var.*Available variables: \['text'\]"):
+        ProcessingParams(
+            inputs=[InputVar(name="text", key="text")],
+            outputs=[],
+            output_schema={"a": "{{ text }}", "b": "Q: {{ typo_var }}"},
+        )
+
+
+def test_config_load_rejects_schema_typo(tmp_path):
+    with pytest.raises(ValueError, match="custom_reslut") as exc_info:
+        load_mmirage_config(str(_write_config(tmp_path)))
+
+    assert "processed" in str(exc_info.value)
+    assert not (tmp_path / "state").exists()
+
+
+def test_shard_fails_before_writing_state_on_schema_typo(tmp_path, monkeypatch):
+    # Rejected at config load: not recorded as a shard failure, so not retried.
+    config = _write_config(tmp_path)
     monkeypatch.setenv("SLURM_ARRAY_TASK_ID", "0")
     monkeypatch.setattr(sys, "argv", ["mmirage.shard_process", "--config", str(config)])
 
-    with pytest.raises(SystemExit):
+    with pytest.raises(ValueError, match="custom_reslut"):
         shard_process.main()
 
-    status = read_status(shard_state_dir(0, str(tmp_path / "state")))
-    assert status.status == "failed"
-    assert "custom_reslut" in status.error
-    assert "processed" in status.error
+    assert not (tmp_path / "state").exists()

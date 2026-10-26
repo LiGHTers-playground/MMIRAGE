@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 from mmirage.config.loading import LoadingParams
 from mmirage.core.process.base import BaseProcessorConfig
 from mmirage.core.process.variables import InputVar, OutputVar
+from mmirage.core.writer.renderer import TemplateRenderer
 
 
 @dataclass
@@ -100,6 +101,21 @@ class ProcessingParams:
     output_schema: Dict[str, Any]
     remove_columns: bool = False
     cast_images: bool = True
+
+    def __post_init__(self) -> None:
+        # Jinja renders an unknown name as "", so a typo would silently empty a
+        # field. Checked at config load so the launcher fails before submitting.
+        available = {var.name for var in [*self.inputs, *self.outputs]}
+        unknown = {
+            key: sorted(TemplateRenderer({key: tmpl}).undeclared_variables(available))
+            for key, tmpl in self.output_schema.items()
+        }
+        unknown = {key: names for key, names in unknown.items() if names}
+        if unknown:
+            raise ValueError(
+                f"output_schema references unknown variables (by schema key): {unknown}. "
+                f"Available variables: {sorted(available)}"
+            )
 
 
 @dataclass
