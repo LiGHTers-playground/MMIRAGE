@@ -305,14 +305,16 @@ class OpenAIBatchAdapter(BatchSubmissionAdapter):
 
     @staticmethod
     def _extract_error_message(row: Dict[str, Any]) -> str:
+        # Error-file rows carry the error under response.body or at the root.
         try:
-            error = row["response"]["body"]["error"]
+            body_error = row["response"]["body"]["error"]
+        except (KeyError, TypeError):
+            body_error = None
+        for error in (body_error, row.get("error")):
             if isinstance(error, dict):
                 message = error.get("message")
                 if isinstance(message, str):
                     return message
-        except (KeyError, TypeError):
-            pass
 
         return ""
 
