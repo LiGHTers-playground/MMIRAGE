@@ -38,8 +38,12 @@ from mmirage.shard_utils import (
 logger = logging.getLogger(__name__)
 
 
-class ShardTerminatedError(Exception):
-    """Raised in the shard process when it receives SIGTERM."""
+class ShardTerminatedError(BaseException):
+    """Raised in the shard process when it receives SIGTERM.
+
+    A BaseException, like KeyboardInterrupt, so that processors catching
+    ``Exception`` around their work cannot turn it into a fallback value.
+    """
 
 
 def _install_sigterm_handler() -> None:
@@ -362,7 +366,7 @@ def main():
             mapper.shutdown()
             logger.info("Processors shut down.")
 
-    except Exception as e:
+    except (Exception, ShardTerminatedError) as e:
         error_msg = f"{type(e).__name__}: {str(e)}"
         logger.error(f"❌ Shard {shard_id} failed: {error_msg}")
         logger.error(traceback.format_exc())

@@ -151,3 +151,75 @@ def test_sigterm_marks_shard_failed(tmp_path, start_method):
     status = read_status(shard_state_dir(0, str(tmp_path / "state")))
     assert status.status == "failed"
     assert "SIGTERM" in status.error
+
+
+SWALLOWING_CONFIG = """\
+processors:
+  - type: swallowing
+
+loading_params:
+  state_dir: {tmp}/state
+  datasets:
+    - type: JSONL
+      path: {tmp}/data.jsonl
+      output_dir: {tmp}/out
+
+processing_params:
+  inputs:
+    - name: text
+      key: text
+  outputs:
+    - name: result
+      type: swallowing
+  output_schema:
+    result: "{{{{ result }}}}"
+"""
+
+RUN_WITH_SWALLOWING_PROCESSOR = """\
+import sys
+
+import swallowing_processor  # noqa: F401  (registers the processor)
+from mmirage import shard_process
+
+sys.argv = ["mmirage.shard_process", "--config", sys.argv[1]]
+shard_process.main()
+"""
+
+
+def test_sigterm_is_not_swallowed_by_a_processor(tmp_path):
+    # The llm and custom processors wrap their work in `except Exception`; SIGTERM
+    # must still end the shard as failed instead of becoming a fallback value.
+    started = tmp_path / "started"
+    (tmp_path / "data.jsonl").write_text(json.dumps({"text": "hi"}) + "\n")
+    config = tmp_path / "config.yaml"
+    config.write_text(SWALLOWING_CONFIG.format(tmp=tmp_path))
+    unit_tests_dir = os.path.dirname(os.path.abspath(__file__))
+    pythonpath = os.pathsep.join(
+        filter(None, [unit_tests_dir, os.environ.get("PYTHONPATH")])
+    )
+
+    proc = subprocess.Popen(
+        [sys.executable, "-c", RUN_WITH_SWALLOWING_PROCESSOR, str(config)],
+        env={
+            **os.environ,
+            "PYTHONPATH": pythonpath,
+            "SLURM_ARRAY_TASK_ID": "0",
+            "MMIRAGE_TEST_STARTED": str(started),
+        },
+    )
+    try:
+        deadline = time.monotonic() + 60
+        while not started.exists():
+            assert proc.poll() is None, "shard process exited before processing"
+            assert time.monotonic() < deadline, "processor never started"
+            time.sleep(0.1)
+
+        proc.send_signal(signal.SIGTERM)
+        returncode = proc.wait(timeout=10)
+    finally:
+        proc.kill()
+
+    assert returncode != 0
+    status = read_status(shard_state_dir(0, str(tmp_path / "state")))
+    assert status.status == "failed"
+    assert "SIGTERM" in status.error
