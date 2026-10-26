@@ -2,9 +2,9 @@
 
 import logging
 from collections import defaultdict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
-from jinja2 import Environment, Template
+from jinja2 import Environment, Template, meta
 from jinja2.nodes import Name, Output
 from PIL import Image
 
@@ -52,6 +52,28 @@ class TemplateRenderer:
                 )
 
         return rendered_batch
+
+    def undeclared_variables(self, available: Set[str]) -> Set[str]:
+        """Return top-level variable names used by output_schema but not available.
+
+        Args:
+            available: Names of the variables that will be defined at render time.
+
+        Returns:
+            Names referenced by templates anywhere in output_schema (nested dicts
+            and lists included) that are not in ``available``.
+        """
+
+        def collect(obj: Any) -> Set[str]:
+            if isinstance(obj, dict):
+                return set().union(*map(collect, obj.values()))
+            if isinstance(obj, list):
+                return set().union(*map(collect, obj))
+            if isinstance(obj, str):
+                return meta.find_undeclared_variables(JINJA_ENV.parse(obj))
+            return set()
+
+        return collect(self.output_schema) - available
 
     def is_single_variable_template(self, s: str) -> Optional[str]:
         """Check if a string is a simple single-variable template.
