@@ -13,6 +13,7 @@ from mmirage.cli_utils.slurm import submit_slurm_job
 from mmirage.config.config import MMirageConfig
 from mmirage.shard_utils import (
     ShardStatus,
+    _mark_failure,
     format_duration,
     read_status,
     shard_state_dir,
@@ -67,8 +68,21 @@ def get_shard_status(state_dir: str) -> Tuple[str, int]:
     return (parsed.status, parsed.retry_count)
 
 
-def check_failed_shards(cfg: MMirageConfig) -> Tuple[List[int], ShardSummary]:
-    """Return retryable failed shards and a compact summary."""
+STALE_RUNNING_ERROR = "stale running state (process died without reporting)"
+
+
+def check_failed_shards(
+    cfg: MMirageConfig, treat_running_as_failed: bool = False
+) -> Tuple[List[int], ShardSummary]:
+    """Return retryable failed shards and a compact summary.
+
+    Args:
+        cfg: Parsed MMIRAGE configuration object.
+        treat_running_as_failed: Set when no shard process can still be alive
+            (the caller waited for its jobs). A shard left in "running" then
+            died without reporting: it is rewritten as failed and counted as
+            failed or max_retries_exceeded according to its retry count.
+    """
     state_root = cfg.loading_params.get_state_root()
 
     num_shards = cfg.loading_params.get_num_shards()
@@ -80,7 +94,12 @@ def check_failed_shards(cfg: MMirageConfig) -> Tuple[List[int], ShardSummary]:
     allowed_attempts = max_allowed_attempts(max_retries)
 
     for shard_id in range(num_shards):
-        status, attempt_count = get_shard_status(shard_state_dir(shard_id, state_root))
+        state_dir = shard_state_dir(shard_id, state_root)
+        status, attempt_count = get_shard_status(state_dir)
+        if status == "running" and treat_running_as_failed:
+            logger.warning("Shard %s: %s", shard_id, STALE_RUNNING_ERROR)
+            _mark_failure(state_dir, STALE_RUNNING_ERROR)
+            status = "failed"
         if status == "success":
             success_count += 1
         elif status == "running":

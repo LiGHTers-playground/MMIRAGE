@@ -151,7 +151,9 @@ def launch_pipeline(
                     export_prompts_path=export_prompts_path,
                 )
 
-            failed_shards, summary = check_failed_shards(cfg)
+            failed_shards, summary = check_failed_shards(
+                cfg, treat_running_as_failed=True
+            )
             if status_exit_code(failed_shards, summary) == 0:
                 logger.info("All shards completed successfully")
                 return 0
@@ -200,7 +202,9 @@ def launch_pipeline(
                 return 0
 
             wait_for_slurm_job(job_id, cfg)
-            failed_shards, summary = check_failed_shards(cfg)
+            failed_shards, summary = check_failed_shards(
+                cfg, treat_running_as_failed=True
+            )
             status_code = status_exit_code(failed_shards, summary)
             if status_code == 0:
                 logger.info("All shards completed successfully")
@@ -211,14 +215,20 @@ def launch_pipeline(
             return status_code
 
         wait_for_slurm_job(job_id, cfg)
-        failed_shards, summary = check_failed_shards(cfg)
+        failed_shards, summary = check_failed_shards(cfg, treat_running_as_failed=True)
 
         if status_exit_code(failed_shards, summary) == 0:
             logger.info("All shards completed successfully")
             return 0
 
         if not failed_shards:
-            logger.error("Pipeline ended with shards that exceeded max retries")
+            logger.error(
+                "Pipeline ended with no retryable shards: %s exceeded max retries, "
+                "%s of %s succeeded",
+                summary.max_retries_exceeded,
+                summary.successful,
+                summary.total,
+            )
             return 1
 
         logger.warning("Retrying failed shards: %s", ",".join(map(str, failed_shards)))
@@ -329,6 +339,11 @@ def build_argparser() -> argparse.ArgumentParser:
     )
     check_parser.set_defaults(confirm_mode="prompt")
     check_parser.add_argument(
+        "--treat-running-as-failed",
+        action="store_true",
+        help="Treat shards still marked running as failed (use when no job is alive).",
+    )
+    check_parser.add_argument(
         "--stats",
         action="store_true",
         help="Enable GPU utilization and throughput collection on retried compute nodes",
@@ -345,6 +360,11 @@ def build_argparser() -> argparse.ArgumentParser:
         help="Submit retries without prompting.",
     )
     retry_parser.set_defaults(confirm_mode="prompt")
+    retry_parser.add_argument(
+        "--treat-running-as-failed",
+        action="store_true",
+        help="Treat shards still marked running as failed (use when no job is alive).",
+    )
     retry_parser.add_argument(
         "--stats",
         action="store_true",
@@ -556,7 +576,7 @@ def handle_submit(
         return 0
 
     wait_for_slurm_job(job_id, cfg)
-    failed_shards, summary = check_failed_shards(cfg)
+    failed_shards, summary = check_failed_shards(cfg, treat_running_as_failed=True)
     status_code = status_exit_code(failed_shards, summary)
     if status_code == 0:
         logger.info("All shards completed successfully")
@@ -582,7 +602,9 @@ def handle_check(args: argparse.Namespace, cfg: MMirageConfig, config_path: str)
             logger.warning("--retry and --stats are ignored for batch_api configs.")
         return check_batches(cfg, args.metadata_path)
 
-    failed_shards, summary = check_failed_shards(cfg)
+    failed_shards, summary = check_failed_shards(
+        cfg, treat_running_as_failed=args.treat_running_as_failed
+    )
     print(json.dumps(asdict(summary), indent=2))
 
     status_code = status_exit_code(failed_shards, summary)
@@ -618,7 +640,9 @@ def handle_retry(args: argparse.Namespace, cfg: MMirageConfig, config_path: str)
     if require_slurm(cfg, "retry") != 0:
         return 1
 
-    failed_shards, summary = check_failed_shards(cfg)
+    failed_shards, summary = check_failed_shards(
+        cfg, treat_running_as_failed=args.treat_running_as_failed
+    )
     print(json.dumps(asdict(summary), indent=2))
 
     if not failed_shards:

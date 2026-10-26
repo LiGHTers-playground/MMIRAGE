@@ -6,6 +6,7 @@ Supports both text-only and multimodal (vision-language) processing.
 import argparse
 import logging
 import os
+import signal
 import sys
 import traceback
 from typing import Any, Dict, List, Optional
@@ -35,6 +36,33 @@ from mmirage.shard_utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class ShardTerminatedError(BaseException):
+    """Raised in the shard process when it receives SIGTERM.
+
+    A BaseException, like KeyboardInterrupt, so that processors catching
+    ``Exception`` around their work cannot turn it into a fallback value.
+    """
+
+
+def _install_sigterm_handler() -> None:
+    """Turn SIGTERM into ShardTerminatedError so the shard is marked failed.
+
+    SLURM sends SIGTERM before SIGKILL on timeout or scancel. Forked
+    children (e.g. custom processor workers) inherit the handler, so they
+    restore the default action and terminate as usual.
+    """
+    main_pid = os.getpid()
+
+    def handler(signum, frame):
+        if os.getpid() != main_pid:
+            signal.signal(signum, signal.SIG_DFL)
+            os.kill(os.getpid(), signum)
+            return
+        raise ShardTerminatedError("received SIGTERM")
+
+    signal.signal(signal.SIGTERM, handler)
 
 
 def _image_path_schema_cols(
@@ -207,6 +235,7 @@ def main():
             interval_seconds=5.0, gpu_indices=gpu_indices_for_polling
         )
 
+    _install_sigterm_handler()
     try:
         retry_count = _mark_running(state_dir, shard_id, datasets_config)
         logger.info(
@@ -337,7 +366,7 @@ def main():
             mapper.shutdown()
             logger.info("Processors shut down.")
 
-    except Exception as e:
+    except (Exception, ShardTerminatedError) as e:
         error_msg = f"{type(e).__name__}: {str(e)}"
         logger.error(f"❌ Shard {shard_id} failed: {error_msg}")
         logger.error(traceback.format_exc())

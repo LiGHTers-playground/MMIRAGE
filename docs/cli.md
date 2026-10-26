@@ -65,7 +65,7 @@ mmirage submit --config configs/config.yaml [--shard-ids 0,2,3] [--wait] [--stat
 Inspect shard status from the state directory and optionally submit retries.
 
 ```bash
-mmirage check --config configs/config.yaml [--retry] [-y] [--stats] [--metadata-path PATH ...]
+mmirage check --config configs/config.yaml [--retry] [-y] [--stats] [--treat-running-as-failed] [--metadata-path PATH ...]
 ```
 
 | Flag | Description |
@@ -73,9 +73,17 @@ mmirage check --config configs/config.yaml [--retry] [-y] [--stats] [--metadata-
 | `--retry` | Submit a retry job for any failed shards |
 | `-y`, `--yes` | Submit retries without prompting for confirmation |
 | `--stats` | Enable GPU utilization and throughput collection on retried compute nodes |
+| `--treat-running-as-failed` | Count shards still marked `running` as failed (and rewrite their status) so they can be retried. Use only when no job for this config is alive, e.g. after a job was killed |
 | `--metadata-path PATH [PATH ...]` | `batch_api` configs only: metadata receipt file(s). If omitted, receipts are resolved from each processor's `metadata_output_path` |
 
 Exits with code `0` if all shards succeeded, `1` otherwise.
+
+A shard whose process was killed (SLURM timeout, OOM, `scancel`) can stay in the
+`running` state. A shard process that receives SIGTERM marks itself `failed`, but
+SIGKILL leaves no chance to report. `mmirage run` and `mmirage submit --wait`
+treat shards still `running` after their jobs finished as failed; `check` and
+`retry` do so only with `--treat-running-as-failed`, since they may run while
+jobs are alive.
 
 For a config declaring a `batch_api` processor, `check` reports the provider batch status from the metadata receipts instead of the shard state — see [Batch API](batch_api.md). It exits `1` only when a batch failed at provider level, batches still running are not a failure, and `--retry`, `-y` and `--stats` are ignored.
 
@@ -86,13 +94,14 @@ For a config declaring a `batch_api` processor, `check` reports the provider bat
 Submit a retry job for failed shards without inspecting status interactively.
 
 ```bash
-mmirage retry --config configs/config.yaml [-y] [--stats]
+mmirage retry --config configs/config.yaml [-y] [--stats] [--treat-running-as-failed]
 ```
 
 | Flag | Description |
 |---|---|
 | `-y`, `--yes` | Submit retries without prompting |
 | `--stats` | Enable GPU utilization and throughput collection on retried compute nodes |
+| `--treat-running-as-failed` | Count shards still marked `running` as failed (and rewrite their status) so they can be retried. Use only when no job for this config is alive, e.g. after a job was killed |
 
 ---
 
