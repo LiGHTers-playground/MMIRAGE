@@ -45,6 +45,20 @@ def config_path(tmp_path):
     return str(path)
 
 
+def test_omitted_shard_params_default(tmp_path, config_path):
+    path = tmp_path / "no_shards.yaml"
+    text = open(config_path).read()
+    path.write_text(
+        text.replace("  num_shards: 4\n", "").replace(
+            '  shard_id: "$SLURM_ARRAY_TASK_ID"\n', ""
+        )
+    )
+    params = load_mmirage_config(str(path)).loading_params
+    assert params.get_num_shards() == 1
+    assert params.get_shard_id() == 0
+    assert not params.is_shard_id_unresolved()
+
+
 def test_unresolved_num_shards_raises(monkeypatch):
     monkeypatch.delenv("N", raising=False)
     with pytest.raises(ValueError, match="num_shards"):
