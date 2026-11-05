@@ -20,6 +20,9 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           python-version: '3.12'
+          # Nothing here installs dependencies through uv, so the cache folder is
+          # never created and the post-job cache save fails the run.
+          enable-cache: false
 
       - name: Check if version bumped
         id: check_version
