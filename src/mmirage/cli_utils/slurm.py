@@ -208,20 +208,13 @@ def submit_slurm_job(
 
 
 def slurm_job_gone(job_id: int | str) -> bool:
-    """Return True only when squeue confirms the job left the queue.
-
-    A failing or hanging squeue returns False. A missing squeue raises OSError.
-    """
-    try:
-        result = subprocess.run(
-            ["squeue", "-h", "-j", str(job_id)],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=60,
-        )
-    except subprocess.TimeoutExpired:
-        return False
+    """Return True only when squeue succeeds and no longer lists the job."""
+    result = subprocess.run(
+        ["squeue", "-h", "-j", str(job_id)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
     return result.returncode == 0 and not result.stdout.strip()
 
 

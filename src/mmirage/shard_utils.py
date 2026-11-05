@@ -417,11 +417,7 @@ def _cleanup_old_shard_data(out_dir: str):
 
 
 def proc_start_time(pid: int) -> Optional[str]:
-    """Return the start time of a process, or None if unknown.
-
-    PIDs are reused, but (pid, start time) identifies one process. Read from
-    /proc on Linux; None elsewhere, where callers fall back to the bare pid.
-    """
+    """Return a process start time from /proc, or None (dead pid, no /proc)."""
     try:
         with open(f"/proc/{pid}/stat") as f:
             # comm (field 2) may contain spaces: split after its closing ")".

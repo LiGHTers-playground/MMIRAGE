@@ -79,29 +79,25 @@ def _pid_alive(pid: int) -> bool:
     except ProcessLookupError:
         return False
     except PermissionError:
-        return True
+        pass
     return True
 
 
 def shard_process_alive(st: ShardStatus) -> bool:
-    """Return False only when the process behind a running shard is known dead.
+    """Return False only when the shard's process is known to be dead.
 
-    Same host: check the pid, and its start time when recorded, since pids are
-    reused. This comes first because SLURM_JOB_ID may name a still-alive
-    salloc allocation around a local run. Otherwise ask squeue for the job.
-    Anything undecidable counts as alive.
+    The pid is checked first: around a local run, SLURM_JOB_ID may name a
+    salloc allocation that outlives the shard.
     """
     if st.pid is not None and st.hostname == socket.gethostname():
         if not _pid_alive(st.pid):
             return False
-        current = proc_start_time(st.pid)
-        return (
-            st.pid_start_time is None or current is None or current == st.pid_start_time
-        )
+        current = proc_start_time(st.pid)  # pids are reused
+        return None in (current, st.pid_start_time) or current == st.pid_start_time
     if st.slurm_job_id:
         try:
             return not slurm_job_gone(st.slurm_job_id)
-        except OSError:  # squeue not installed here
+        except OSError:  # no squeue on this machine
             return True
     return True
 
@@ -109,9 +105,7 @@ def shard_process_alive(st: ShardStatus) -> bool:
 def check_failed_shards(cfg: MMirageConfig) -> Tuple[List[int], ShardSummary]:
     """Return retryable failed shards and a compact summary.
 
-    A shard left in "running" whose process is known dead (see
-    shard_process_alive) is rewritten as failed and counted as failed or
-    max_retries_exceeded according to its retry count.
+    "running" shards whose process is dead are rewritten as failed first.
     """
     state_root = cfg.loading_params.get_state_root()
 
