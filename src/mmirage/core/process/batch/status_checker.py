@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from mmirage.config.batch_provider import BatchProviderConfig
 from mmirage.core.process.batch.adapter import BatchSubmissionResult
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 def extract_unique_provider_batches(
-    metadata_records: Sequence[BatchMetadataRecord],
+    metadata_records: List[BatchMetadataRecord],
 ) -> List[Tuple[str, str]]:
     """Return unique ``(provider, provider_batch_id)`` pairs.
 
@@ -52,8 +52,8 @@ def extract_unique_provider_batches(
 
 
 def run_status_checker(
-    metadata_records: Sequence[BatchMetadataRecord],
-    provider_configs: Mapping[str, BatchProviderConfig],
+    metadata_records: List[BatchMetadataRecord],
+    provider_configs: Dict[str, BatchProviderConfig],
 ) -> List[BatchSubmissionResult]:
     """Check batch status for each referenced provider batch.
 
@@ -100,7 +100,7 @@ def run_status_checker(
 
 def check_batches(
     cfg: "MMirageConfig",
-    metadata_paths: Optional[Sequence[str]] = None,
+    metadata_paths: Optional[List[str]] = None,
 ) -> int:
     """Check every batch referenced by the receipts of ``cfg``.
 
@@ -159,7 +159,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(argv: List[str] | None = None) -> int:
     """CLI entry point that returns a process-style status code.
 
     Returns 0 on success or no batches found, and 1 on configuration or

@@ -7,7 +7,7 @@ import json
 import logging
 import mimetypes
 import os
-from typing import Any, Dict, List, Mapping, Sequence
+from typing import Any, Dict, List, Mapping
 
 from openai import OpenAI
 
@@ -115,7 +115,7 @@ class OpenAIBatchAdapter(BatchSubmissionAdapter):
     def submit_chunk(
         self,
         chunk_id: str,
-        requests: Sequence[Dict[str, Any]],
+        requests: List[Dict[str, Any]],
         config: BatchProviderConfig,
     ) -> Dict[str, Any]:
         openai_config = self._require_openai_config(config)
@@ -168,7 +168,7 @@ class OpenAIBatchAdapter(BatchSubmissionAdapter):
         self,
         provider_batch_id: str,
         config: BatchProviderConfig,
-    ) -> Sequence[Dict[str, Any]]:
+    ) -> List[Dict[str, Any]]:
         """Download completed OpenAI batch rows and normalize text into ``generated_text``.
 
         OpenAI batch outputs can surface the assistant payload in nested

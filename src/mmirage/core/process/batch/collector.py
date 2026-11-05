@@ -18,9 +18,7 @@ from typing import (
     Any,
     Dict,
     List,
-    Mapping,
     Optional,
-    Sequence,
     Tuple,
 )
 
@@ -40,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 def _aggregate_batch_mappings(
-    records: Sequence[BatchMetadataRecord],
+    records: List[BatchMetadataRecord],
 ) -> Dict[Tuple[str, str], Dict[str, int]]:
     """Group source-index mappings by provider and provider batch ID.
 
@@ -68,7 +66,7 @@ def _aggregate_batch_mappings(
 
 
 def _latest_receipt_by_batch(
-    records: Sequence[BatchMetadataRecord],
+    records: List[BatchMetadataRecord],
 ) -> Dict[Tuple[str, str], BatchMetadataRecord]:
     """Keep one receipt per provider batch: the last submitted, then the last read."""
     latest: Dict[Tuple[str, str], BatchMetadataRecord] = {}
@@ -83,8 +81,8 @@ def _latest_receipt_by_batch(
 
 
 def collect_and_merge(
-    records: Sequence[BatchMetadataRecord],
-    provider_configs: Mapping[str, BatchProviderConfig],
+    records: List[BatchMetadataRecord],
+    provider_configs: Dict[str, BatchProviderConfig],
     output_path: str,
 ) -> List[Dict[str, Any]]:
     """Fetch provider outputs and write merged rows in shard, then source index order.
@@ -105,7 +103,7 @@ def collect_and_merge(
     pair_to_receipt = _latest_receipt_by_batch(records)
 
     adapters: Dict[str, Any] = {}
-    pair_to_results: Dict[Tuple[str, str], Sequence[Dict[str, Any]]] = {}
+    pair_to_results: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
 
     for provider, provider_batch_id in pair_to_mapping.keys():
         if provider not in provider_configs:
@@ -168,7 +166,7 @@ def collect_and_merge(
 
 
 def _build_output_payload(
-    result_row: Mapping[str, Any], custom_id: str = ""
+    result_row: Dict[str, Any], custom_id: str = ""
 ) -> Dict[str, Any]:
     """Convert provider content into the receiver's output schema.
 
@@ -220,7 +218,7 @@ def _build_output_payload(
 def collect_batches(
     cfg: "MMirageConfig",
     output_path: str,
-    metadata_paths: Optional[Sequence[str]] = None,
+    metadata_paths: Optional[List[str]] = None,
 ) -> int:
     """Retrieve every batch referenced by the receipts of ``cfg`` and merge them.
 
@@ -274,7 +272,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(argv: List[str] | None = None) -> int:
     """Run the collector CLI.
 
     Reads receipt metadata, resolves provider configs from the supplied MMIRAGE

@@ -6,7 +6,7 @@ import argparse
 import logging
 import os
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import List, Optional
 
 from mmirage.config.config import MMirageConfig
 
@@ -40,7 +40,7 @@ def get_project_root(cfg: MMirageConfig) -> str:
     return os.getcwd()
 
 
-def create_directories(paths: Sequence[str]) -> None:
+def create_directories(paths: List[str]) -> None:
     """Create directories if they do not already exist."""
     for path in paths:
         Path(path).mkdir(parents=True, exist_ok=True)

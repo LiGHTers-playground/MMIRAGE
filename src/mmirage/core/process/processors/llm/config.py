@@ -5,7 +5,7 @@ import logging
 import os
 import re
 from dataclasses import dataclass, field, fields
-from typing import Annotated, Any, ClassVar, Dict, Literal, Optional, Sequence, Type
+from typing import Annotated, Any, ClassVar, Dict, List, Literal, Optional, Type
 
 from jinja2 import Environment, meta
 from pydantic import BaseModel, create_model
@@ -281,7 +281,7 @@ class LLMOutputVar(OutputVar):
             return create_model("OutputSchema", **field_defs)
         return None
 
-    def is_computable(self, vars: Sequence[BaseVar]) -> bool:
+    def is_computable(self, vars: List[BaseVar]) -> bool:
         """Check if all variables referenced in the prompt are available.
 
         Args:

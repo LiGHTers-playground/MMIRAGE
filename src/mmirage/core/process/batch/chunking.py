@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List
 
 from mmirage.config.batch_provider import BatchProviderConfig, OversizedRequestPolicy
 from mmirage.core.process.batch.adapter import BatchSubmissionAdapter
@@ -32,7 +32,7 @@ class BatchRequestChunker:
         self.adapter = adapter
         self.config = config
 
-    def chunk_requests(self, requests: Sequence[Dict[str, Any]]) -> List[RequestChunk]:
+    def chunk_requests(self, requests: List[Dict[str, Any]]) -> List[RequestChunk]:
         """Chunk requests according to max bytes, max requests, and oversize policy."""
 
         chunks: List[RequestChunk] = []
@@ -97,9 +97,7 @@ class BatchRequestChunker:
 
         return chunks
 
-    def _would_exceed_count_limit(
-        self, current_requests: Sequence[Dict[str, Any]]
-    ) -> bool:
+    def _would_exceed_count_limit(self, current_requests: List[Dict[str, Any]]) -> bool:
         if self.config.max_requests_per_chunk is None:
             return False
         return len(current_requests) >= self.config.max_requests_per_chunk

@@ -4,7 +4,7 @@ import logging
 import os
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional, Sequence
+from typing import Any, Dict, List, Literal, Optional
 
 from jinja2 import Environment, meta
 
@@ -170,7 +170,7 @@ class ImageGenOutputVar(OutputVar):
     guidance_scale: Optional[float] = None
     seed: Optional[int] = None
 
-    def is_computable(self, vars: Sequence[BaseVar]) -> bool:
+    def is_computable(self, vars: List[BaseVar]) -> bool:
         """Check if all variables referenced in templates are available."""
         reserved = {"__sample_index", "__output_name", "__shard_id", "__source_hash"}
         var_names = {v.name for v in vars}

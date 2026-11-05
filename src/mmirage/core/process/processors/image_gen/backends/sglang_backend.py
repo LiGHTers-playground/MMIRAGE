@@ -18,7 +18,7 @@ import logging
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple
 
 try:
     from PIL import Image as PILImage
@@ -98,10 +98,10 @@ class SGLangImageBackend:
 
     def generate_batch(
         self,
-        prompts: Sequence[str],
-        negative_prompts: Optional[Sequence[Optional[str]]] = None,
+        prompts: List[str],
+        negative_prompts: Optional[List[Optional[str]]] = None,
         params: Optional[Dict[str, Any]] = None,
-        seeds: Optional[Sequence[Optional[int]]] = None,
+        seeds: Optional[List[Optional[int]]] = None,
     ) -> List[PILImageType]:
         """Generate one image per prompt and return PIL Images."""
         params = params or {}

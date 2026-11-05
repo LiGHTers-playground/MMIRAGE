@@ -9,7 +9,7 @@ import json
 import logging
 import mimetypes
 import os
-from typing import Any, Dict, Iterable, List, Mapping, Sequence
+from typing import Any, Dict, Iterable, List, Mapping
 
 from anthropic import Anthropic
 
@@ -92,7 +92,7 @@ class AnthropicBatchAdapter(BatchSubmissionAdapter):
     def submit_chunk(
         self,
         chunk_id: str,
-        requests: Sequence[Dict[str, Any]],
+        requests: List[Dict[str, Any]],
         config: BatchProviderConfig,
     ) -> Dict[str, Any]:
         anthropic_config = self._require_anthropic_config(config)
@@ -137,7 +137,7 @@ class AnthropicBatchAdapter(BatchSubmissionAdapter):
         self,
         provider_batch_id: str,
         config: BatchProviderConfig,
-    ) -> Sequence[Dict[str, Any]]:
+    ) -> List[Dict[str, Any]]:
         """Download completed Anthropic batch rows and normalize text into ``generated_text``."""
         anthropic_config = self._require_anthropic_config(config)
         client = self._create_client(anthropic_config)
