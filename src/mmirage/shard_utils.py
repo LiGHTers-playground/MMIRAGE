@@ -244,6 +244,7 @@ class ShardStatus:
     error: Optional[str] = None
     hostname: Optional[str] = None
     pid: Optional[int] = None
+    pid_start_time: Optional[str] = None
     slurm_job_id: Optional[str] = None
     slurm_array_task_id: Optional[str] = None
     datasets: Optional[List[Dict[str, Any]]] = None
@@ -287,6 +288,7 @@ class ShardStatus:
             error=data.get("error"),
             hostname=data.get("hostname"),
             pid=pid,
+            pid_start_time=data.get("pid_start_time"),
             slurm_job_id=data.get("slurm_job_id"),
             slurm_array_task_id=data.get("slurm_array_task_id"),
             datasets=datasets,
@@ -304,6 +306,7 @@ class ShardStatus:
             "error": self.error,
             "hostname": self.hostname,
             "pid": self.pid,
+            "pid_start_time": self.pid_start_time,
             "slurm_job_id": self.slurm_job_id,
             "slurm_array_task_id": self.slurm_array_task_id,
             "datasets": self.datasets,
@@ -413,6 +416,20 @@ def _cleanup_old_shard_data(out_dir: str):
         logger.info(f"Removed old shard output: {out_dir}")
 
 
+def proc_start_time(pid: int) -> Optional[str]:
+    """Return the start time of a process, or None if unknown.
+
+    PIDs are reused, but (pid, start time) identifies one process. Read from
+    /proc on Linux; None elsewhere, where callers fall back to the bare pid.
+    """
+    try:
+        with open(f"/proc/{pid}/stat") as f:
+            # comm (field 2) may contain spaces: split after its closing ")".
+            return f.read().rsplit(")", 1)[1].split()[19]
+    except (OSError, IndexError):
+        return None
+
+
 def _status_file(state_dir: str) -> str:
     """Canonical status file path."""
     return os.path.join(state_dir, "status.json")
@@ -481,6 +498,7 @@ def _mark_running(
         error=None,
         hostname=socket.gethostname(),
         pid=os.getpid(),
+        pid_start_time=proc_start_time(os.getpid()),
         slurm_job_id=os.environ.get("SLURM_JOB_ID"),
         slurm_array_task_id=os.environ.get("SLURM_ARRAY_TASK_ID"),
         datasets=[

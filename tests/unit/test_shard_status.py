@@ -3,6 +3,7 @@
 import json
 import os
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -11,10 +12,17 @@ from types import SimpleNamespace
 import pytest
 
 from mmirage import cli
+from mmirage.cli_utils import status as status_module
 from mmirage.cli_utils.status import check_failed_shards
 from mmirage.config.config import ExecutionParams
 from mmirage.config.loading import LoadingParams
-from mmirage.shard_utils import ShardStatus, _write_status, read_status, shard_state_dir
+from mmirage.shard_utils import (
+    ShardStatus,
+    _write_status,
+    proc_start_time,
+    read_status,
+    shard_state_dir,
+)
 
 
 def _cfg(state_root, max_retries=3):
@@ -26,15 +34,26 @@ def _cfg(state_root, max_retries=3):
     )
 
 
-def _write(state_root, status, retry_count):
+def _dead_pid():
+    proc = subprocess.Popen([sys.executable, "-c", "pass"])
+    proc.wait()
+    return proc.pid
+
+
+def _write(state_root, status, retry_count, **identity):
     _write_status(
         shard_state_dir(0, str(state_root)),
-        ShardStatus(status=status, retry_count=retry_count, shard_id=0),
+        ShardStatus(status=status, retry_count=retry_count, shard_id=0, **identity),
     )
 
 
-def test_running_shard_not_failed_by_default(tmp_path):
-    _write(tmp_path, "running", retry_count=1)
+def _local(pid, start_time=None):
+    return {"pid": pid, "hostname": socket.gethostname(), "pid_start_time": start_time}
+
+
+def test_running_shard_with_live_process_stays_running(tmp_path):
+    pid = os.getpid()
+    _write(tmp_path, "running", 1, **_local(pid, proc_start_time(pid)))
 
     failed, summary = check_failed_shards(_cfg(tmp_path))
 
@@ -42,10 +61,10 @@ def test_running_shard_not_failed_by_default(tmp_path):
     assert summary.running == 1
 
 
-def test_running_shard_treated_as_failed(tmp_path):
-    _write(tmp_path, "running", retry_count=1)
+def test_running_shard_with_dead_process_is_failed(tmp_path):
+    _write(tmp_path, "running", 1, **_local(_dead_pid()))
 
-    failed, summary = check_failed_shards(_cfg(tmp_path), treat_running_as_failed=True)
+    failed, summary = check_failed_shards(_cfg(tmp_path))
 
     assert failed == [0]
     assert summary.running == 0
@@ -55,12 +74,39 @@ def test_running_shard_treated_as_failed(tmp_path):
     assert "stale running state" in status.error
 
 
-def test_stale_running_shard_over_budget(tmp_path):
-    _write(tmp_path, "running", retry_count=5)
+@pytest.mark.skipif(proc_start_time(os.getpid()) is None, reason="needs /proc")
+def test_reused_pid_is_detected_by_start_time(tmp_path):
+    _write(tmp_path, "running", 1, **_local(os.getpid(), "1"))
 
-    failed, summary = check_failed_shards(
-        _cfg(tmp_path, max_retries=3), treat_running_as_failed=True
-    )
+    failed, _ = check_failed_shards(_cfg(tmp_path))
+
+    assert failed == [0]
+
+
+@pytest.mark.parametrize("gone", [True, False])
+def test_slurm_shard_uses_squeue(tmp_path, monkeypatch, gone):
+    monkeypatch.setattr(status_module, "slurm_job_gone", lambda job_id: gone)
+    _write(tmp_path, "running", 1, pid=1, hostname="other-node", slurm_job_id="42")
+
+    failed, summary = check_failed_shards(_cfg(tmp_path))
+
+    assert failed == ([0] if gone else [])
+    assert summary.running == (0 if gone else 1)
+
+
+def test_running_shard_without_identity_stays_running(tmp_path):
+    _write(tmp_path, "running", 1)
+
+    failed, summary = check_failed_shards(_cfg(tmp_path))
+
+    assert failed == []
+    assert summary.running == 1
+
+
+def test_stale_running_shard_over_budget(tmp_path):
+    _write(tmp_path, "running", 5, **_local(_dead_pid()))
+
+    failed, summary = check_failed_shards(_cfg(tmp_path, max_retries=3))
 
     assert failed == []
     assert summary.max_retries_exceeded == 1
@@ -68,13 +114,17 @@ def test_stale_running_shard_over_budget(tmp_path):
 
 def test_slurm_retry_loop_relaunches_stale_running_shard(tmp_path, monkeypatch):
     submitted = []
+    dead = _dead_pid()
 
     def fake_submit(cfg, config_path, shard_ids, collect_stats=False):
         submitted.append(list(shard_ids))
         return len(submitted)
 
     def fake_wait(job_id, cfg):
-        _write(tmp_path, "running" if job_id == 1 else "success", retry_count=job_id)
+        if job_id == 1:
+            _write(tmp_path, "running", 1, **_local(dead))
+        else:
+            _write(tmp_path, "success", job_id)
 
     monkeypatch.setattr(cli, "submit_slurm_job", fake_submit)
     monkeypatch.setattr(cli, "wait_for_slurm_job", fake_wait)

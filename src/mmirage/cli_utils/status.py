@@ -5,16 +5,18 @@ from __future__ import annotations
 import json
 import logging
 import os
+import socket
 import sys
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
 
-from mmirage.cli_utils.slurm import submit_slurm_job
+from mmirage.cli_utils.slurm import slurm_job_gone, submit_slurm_job
 from mmirage.config.config import MMirageConfig
 from mmirage.shard_utils import (
     ShardStatus,
     _mark_failure,
     format_duration,
+    proc_start_time,
     read_status,
     shard_state_dir,
 )
@@ -71,17 +73,45 @@ def get_shard_status(state_dir: str) -> Tuple[str, int]:
 STALE_RUNNING_ERROR = "stale running state (process died without reporting)"
 
 
-def check_failed_shards(
-    cfg: MMirageConfig, treat_running_as_failed: bool = False
-) -> Tuple[List[int], ShardSummary]:
+def _pid_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)  # signal 0 only checks that the pid exists
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def shard_process_alive(st: ShardStatus) -> bool:
+    """Return False only when the process behind a running shard is known dead.
+
+    Same host: check the pid, and its start time when recorded, since pids are
+    reused. This comes first because SLURM_JOB_ID may name a still-alive
+    salloc allocation around a local run. Otherwise ask squeue for the job.
+    Anything undecidable counts as alive.
+    """
+    if st.pid is not None and st.hostname == socket.gethostname():
+        if not _pid_alive(st.pid):
+            return False
+        current = proc_start_time(st.pid)
+        return (
+            st.pid_start_time is None or current is None or current == st.pid_start_time
+        )
+    if st.slurm_job_id:
+        try:
+            return not slurm_job_gone(st.slurm_job_id)
+        except OSError:  # squeue not installed here
+            return True
+    return True
+
+
+def check_failed_shards(cfg: MMirageConfig) -> Tuple[List[int], ShardSummary]:
     """Return retryable failed shards and a compact summary.
 
-    Args:
-        cfg: Parsed MMIRAGE configuration object.
-        treat_running_as_failed: Set when no shard process can still be alive
-            (the caller waited for its jobs). A shard left in "running" then
-            died without reporting: it is rewritten as failed and counted as
-            failed or max_retries_exceeded according to its retry count.
+    A shard left in "running" whose process is known dead (see
+    shard_process_alive) is rewritten as failed and counted as failed or
+    max_retries_exceeded according to its retry count.
     """
     state_root = cfg.loading_params.get_state_root()
 
@@ -96,7 +126,7 @@ def check_failed_shards(
     for shard_id in range(num_shards):
         state_dir = shard_state_dir(shard_id, state_root)
         status, attempt_count = get_shard_status(state_dir)
-        if status == "running" and treat_running_as_failed:
+        if status == "running" and not shard_process_alive(read_status(state_dir)):
             logger.warning("Shard %s: %s", shard_id, STALE_RUNNING_ERROR)
             _mark_failure(state_dir, STALE_RUNNING_ERROR)
             status = "failed"
