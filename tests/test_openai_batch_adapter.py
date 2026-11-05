@@ -678,3 +678,17 @@ def test_openai_retrieve_results_reads_output_and_error_files(monkeypatch):
         "status": "error",
         "error_message": "Unrecognized request argument supplied: expected_schema",
     }
+
+
+def test_openai_extract_error_message_reads_root_level_error():
+    # Error-file rows for requests that never reached the model (e.g. expired)
+    # carry the error at the root, with a null response.
+    from mmirage.core.process.batch.openai_adapter import OpenAIBatchAdapter
+
+    row = {
+        "custom_id": "c4",
+        "response": None,
+        "error": {"code": "batch_expired", "message": "request expired"},
+    }
+
+    assert OpenAIBatchAdapter._extract_error_message(row) == "request expired"
