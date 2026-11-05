@@ -419,11 +419,15 @@ def _cleanup_old_shard_data(out_dir: str):
 def proc_start_time(pid: int) -> Optional[str]:
     """Return a process start time from /proc, or None (dead pid, no /proc)."""
     try:
-        with open(f"/proc/{pid}/stat") as f:
-            # comm (field 2) may contain spaces: split after its closing ")".
-            return f.read().rsplit(")", 1)[1].split()[19]
-    except (OSError, IndexError):
+        with open(f"/proc/{pid}/stat", "r") as f:
+            stat = f.read()
+    except OSError:
         return None
+    # Line format (man proc_pid_stat): "pid (comm) state ppid ... starttime ...".
+    # comm can contain spaces and ")", so only split what follows its last ")".
+    # Those fields start at field 3 (state); starttime is field 22.
+    after_comm = stat[stat.rindex(")") + 1 :].split()
+    return after_comm[22 - 3]
 
 
 def _status_file(state_dir: str) -> str:
