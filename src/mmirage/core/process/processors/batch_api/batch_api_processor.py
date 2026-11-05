@@ -212,7 +212,7 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
             source_indices: List[int] = []
             for global_i in text_only_indices:
                 base_prompt = jinja_template.render(**batch[global_i].to_dict())
-                payload = {
+                payload: Dict[str, Any] = {
                     "messages": [
                         {
                             "role": "user",
@@ -221,7 +221,7 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
                     ]
                 }
                 if output_var.output_type == "JSON" and output_var.output_schema:
-                    payload["expected_schema"] = list(output_var.output_schema)  # pyright: ignore[reportArgumentType]
+                    payload["expected_schema"] = list(output_var.output_schema)
                 custom_id = self._next_custom_id(output_var.name, "text")
                 index_to_custom_id[global_i] = custom_id
                 request = self._batch_adapter.build_request(
@@ -259,7 +259,7 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
                         }
                     )
 
-                payload = {
+                payload: Dict[str, Any] = {
                     "messages": [
                         {
                             "role": "user",
@@ -268,7 +268,7 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
                     ]
                 }
                 if output_var.output_type == "JSON" and output_var.output_schema:
-                    payload["expected_schema"] = list(output_var.output_schema)  # pyright: ignore[reportArgumentType]
+                    payload["expected_schema"] = list(output_var.output_schema)
 
                 custom_id = self._next_custom_id(output_var.name, "multimodal")
                 index_to_custom_id[global_i] = custom_id
