@@ -207,18 +207,21 @@ def submit_slurm_job(
         return None
 
 
+def slurm_job_gone(job_id: int | str) -> bool:
+    """Return True only when squeue succeeds and no longer lists the job."""
+    result = subprocess.run(
+        ["squeue", "-h", "-j", str(job_id)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.returncode == 0 and not result.stdout.strip()
+
+
 def wait_for_slurm_job(job_id: int, cfg: MMirageConfig) -> None:
     """Wait for a SLURM job array to leave the queue."""
     logger.info("Waiting for SLURM job %s", job_id)
-    while True:
-        result = subprocess.run(
-            ["squeue", "-h", "-j", str(job_id)],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode == 0 and not result.stdout.strip():
-            break
+    while not slurm_job_gone(job_id):
         time.sleep(cfg.execution_params.poll_interval_seconds)
 
     if cfg.execution_params.settle_time_seconds > 0:
