@@ -6,7 +6,7 @@ request formats and normalize submission responses into a shared result shape.
 
 import abc
 from dataclasses import dataclass, field
-from typing import Any, Dict, Sequence, Tuple
+from typing import Any, Dict, List, Tuple
 
 from mmirage.config.batch_provider import BatchProviderConfig
 
@@ -78,7 +78,7 @@ class BatchSubmissionAdapter(abc.ABC):
     def submit_chunk(
         self,
         chunk_id: str,
-        requests: Sequence[Dict[str, Any]],
+        requests: List[Dict[str, Any]],
         config: BatchProviderConfig,
     ) -> Dict[str, Any]:
         """Submit one pre-chunked request group to the provider.
@@ -133,7 +133,7 @@ class BatchSubmissionAdapter(abc.ABC):
         self,
         provider_batch_id: str,
         config: BatchProviderConfig,
-    ) -> Sequence[Dict[str, Any]]:
+    ) -> List[Dict[str, Any]]:
         """Download and parse completed batch results from the provider.
 
         Implementations should normalize each returned row into a plain mapping

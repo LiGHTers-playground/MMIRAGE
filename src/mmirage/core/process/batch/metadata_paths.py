@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import glob
-from typing import TYPE_CHECKING, List, Optional, Sequence
+from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
     from mmirage.config.config import MMirageConfig
@@ -17,7 +17,7 @@ def _base_path_to_patterns(base_path: str) -> List[str]:
 
 
 def resolve_metadata_paths_from_config(
-    metadata_output_paths: Sequence[str],
+    metadata_output_paths: List[str],
 ) -> List[str]:
     """Return metadata receipt paths for config-provided base paths.
 
@@ -48,7 +48,7 @@ def resolve_metadata_paths_from_config(
 
 def resolve_metadata_paths(
     cfg: "MMirageConfig",
-    metadata_paths: Optional[Sequence[str]] = None,
+    metadata_paths: Optional[List[str]] = None,
 ) -> List[str]:
     """Return receipt paths from explicit values, or from the config batch blocks."""
     if metadata_paths:

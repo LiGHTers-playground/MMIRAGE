@@ -16,7 +16,7 @@ import urllib.error
 import urllib.request
 from collections import deque
 from contextlib import contextmanager
-from typing import Any, Deque, Iterator, List, Optional, Sequence
+from typing import Any, Deque, Iterator, List, Optional
 
 from mmirage.core.process.processors.image_gen.config import SGLangBackendConfig
 
@@ -303,7 +303,7 @@ def _log_process_output(proc: subprocess.Popen[bytes], output_tail: Deque[str]) 
 
 
 def _format_output_tail(proc: subprocess.Popen[bytes]) -> str:
-    output_tail: Sequence[str] = getattr(proc, "_mmirage_output_tail", ())
+    output_tail: List[str] = list(getattr(proc, "_mmirage_output_tail", ()))
     return "\n".join(output_tail) or "(no server output captured)"
 
 

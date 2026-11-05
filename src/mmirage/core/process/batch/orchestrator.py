@@ -7,7 +7,7 @@ import json
 import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Dict, List, Optional
 
 from mmirage.config.batch_provider import BatchProviderConfig
 from mmirage.core.process.batch.adapter import (
@@ -50,8 +50,8 @@ class BatchSubmissionOrchestrator:
     def add_requests(
         self,
         requests: List[Dict[str, Any]],
-        source_indices: Sequence[int],
-        model_params_snapshot: Optional[Mapping[str, Any]] = None,
+        source_indices: List[int],
+        model_params_snapshot: Optional[Dict[str, Any]] = None,
     ) -> List[BatchSubmissionResult]:
         """Append requests and submit only chunks that are ready mid-stream."""
         if len(requests) != len(source_indices):
@@ -69,7 +69,7 @@ class BatchSubmissionOrchestrator:
 
     def finalize(
         self,
-        model_params_snapshot: Optional[Mapping[str, Any]] = None,
+        model_params_snapshot: Optional[Dict[str, Any]] = None,
     ) -> List[BatchSubmissionResult]:
         """Flush all remaining requests at end-of-dataset lifecycle."""
         return self._emit_ready_chunks(
@@ -79,7 +79,7 @@ class BatchSubmissionOrchestrator:
 
     def _emit_ready_chunks(
         self,
-        model_params_snapshot: Optional[Mapping[str, Any]],
+        model_params_snapshot: Optional[Dict[str, Any]],
         finalize: bool = False,
     ) -> List[BatchSubmissionResult]:
         if not self._pending:
@@ -139,7 +139,7 @@ class BatchSubmissionOrchestrator:
     def _export_chunk_requests(
         self,
         chunk_id: str,
-        requests: Sequence[Mapping[str, Any]],
+        requests: List[Dict[str, Any]],
         export_path: str,
     ) -> BatchSubmissionResult:
         batch_id = f"{self._export_batch_prefix}{chunk_id}"
@@ -166,7 +166,7 @@ class BatchSubmissionOrchestrator:
 
     def _split_pending_entries_by_chunks(
         self,
-        chunks: Sequence[RequestChunk],
+        chunks: List[RequestChunk],
     ) -> List[tuple[List[_PendingRequest], RequestChunk]]:
         grouped: List[tuple[List[_PendingRequest], RequestChunk]] = []
         cursor = 0
@@ -192,10 +192,10 @@ class BatchSubmissionOrchestrator:
     def _persist_metadata(
         self,
         chunk_id: str,
-        chunk_entries: Sequence[_PendingRequest],
+        chunk_entries: List[_PendingRequest],
         chunk: RequestChunk,
         parsed_result: BatchSubmissionResult,
-        model_params_snapshot: Optional[Mapping[str, Any]],
+        model_params_snapshot: Optional[Dict[str, Any]],
         flush_reason: str,
     ) -> None:
         if not self.config.metadata_output_path:

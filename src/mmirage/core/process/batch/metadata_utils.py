@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ class BatchMetadataRecord:
     submitted_at_utc: str = ""
 
     @classmethod
-    def from_mapping(cls, payload: Mapping[str, Any]) -> "BatchMetadataRecord":
+    def from_mapping(cls, payload: Dict[str, Any]) -> "BatchMetadataRecord":
         provider = str(payload.get("provider", "")).strip().lower()
         provider_batch_id = str(payload.get("provider_batch_id", "")).strip()
         submitted_at_utc = str(payload.get("submitted_at_utc") or "").strip()

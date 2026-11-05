@@ -6,7 +6,7 @@ import abc
 import os
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Any, Dict, List, Literal, Optional, Sequence
+from typing import Any, Dict, List, Literal, Optional
 
 import jmespath
 from PIL import Image
@@ -74,7 +74,7 @@ class OutputVar(BaseVar):
     type: str = ""
 
     @abc.abstractmethod
-    def is_computable(self, vars: Sequence[BaseVar]) -> bool:
+    def is_computable(self, vars: List[BaseVar]) -> bool:
         raise NotImplementedError()
 
 

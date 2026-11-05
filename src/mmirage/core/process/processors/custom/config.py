@@ -1,7 +1,7 @@
 """Configuration for the custom processor."""
 
 from dataclasses import dataclass
-from typing import Any, Literal, Optional, Sequence
+from typing import Any, List, Literal, Optional
 
 from mmirage.core.process.base import BaseProcessorConfig, ProcessorRegistry
 from mmirage.core.process.variables import BaseVar, OutputVar
@@ -45,7 +45,7 @@ class CustomOutputVar(OutputVar):
 
     type: str = "custom"
 
-    def is_computable(self, vars: Sequence[BaseVar]) -> bool:
+    def is_computable(self, vars: List[BaseVar]) -> bool:
         return True
 
 
