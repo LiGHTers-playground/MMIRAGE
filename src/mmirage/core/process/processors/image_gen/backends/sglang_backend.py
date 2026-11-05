@@ -100,7 +100,7 @@ class SGLangImageBackend:
         self,
         prompts: Sequence[str],
         negative_prompts: Optional[Sequence[Optional[str]]] = None,
-        params: Optional[Mapping[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
         seeds: Optional[Sequence[Optional[int]]] = None,
     ) -> List[PILImageType]:
         """Generate one image per prompt and return PIL Images."""
@@ -138,7 +138,7 @@ class SGLangImageBackend:
         *,
         prompt: str,
         negative_prompt: Optional[str] = None,
-        params: Optional[Mapping[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
         seed: Optional[int] = None,
     ) -> PILImageType:
         """Generate a single image and return a PIL Image."""
@@ -173,7 +173,7 @@ class SGLangImageBackend:
         *,
         prompt: str,
         negative_prompt: Optional[str],
-        params: Mapping[str, Any],
+        params: Dict[str, Any],
         seed: Optional[int],
     ) -> JsonDict:
         if not prompt or not prompt.strip():
@@ -247,7 +247,7 @@ class SGLangImageBackend:
         return payload
 
     @staticmethod
-    def _extract_size(params: Mapping[str, Any]) -> Optional[str]:
+    def _extract_size(params: Dict[str, Any]) -> Optional[str]:
         if params.get("size"):
             return str(params["size"])
 

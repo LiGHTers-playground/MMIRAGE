@@ -10,7 +10,7 @@ import socket
 import tempfile
 import time
 import uuid
-from typing import Any, Dict, List, Optional, Sequence, override
+from typing import Any, Dict, List, Optional, override
 
 import jinja2
 
@@ -123,7 +123,7 @@ class ImageGenProcessor(BaseProcessor[ImageGenOutputVar]):
         base_seed: int,
         batch_offset: int,
         count: int,
-    ) -> List[int]:
+    ) -> List[Optional[int]]:
         """Compute per-sample deterministic seeds that are unique across shards.
 
         The seed for a sample is:
@@ -261,7 +261,7 @@ class ImageGenProcessor(BaseProcessor[ImageGenOutputVar]):
             if negative_prompt_template is not None
             else None
         )
-        seeds: Sequence[Optional[int]] = (
+        seeds: List[Optional[int]] = (
             self._compute_seeds(int(output_var.seed), batch_offset, len(chunk))
             if output_var.seed is not None
             else [None] * len(chunk)

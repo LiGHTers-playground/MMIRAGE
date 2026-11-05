@@ -49,7 +49,7 @@ class BatchSubmissionOrchestrator:
 
     def add_requests(
         self,
-        requests: Sequence[Dict[str, Any]],
+        requests: List[Dict[str, Any]],
         source_indices: Sequence[int],
         model_params_snapshot: Optional[Mapping[str, Any]] = None,
     ) -> List[BatchSubmissionResult]:
