@@ -92,6 +92,7 @@ class DataLoaderRegistry:
         def inner_register(clazz: Any):
             cls._registry[name] = clazz
             cls._config_registry[name] = config_cls
+            return clazz
 
         return inner_register
 
