@@ -14,7 +14,7 @@ import threading
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import humanize
 from datasets import DatasetDict
@@ -416,8 +416,8 @@ def _cleanup_old_shard_data(out_dir: str):
         logger.info(f"Removed old shard output: {out_dir}")
 
 
-def proc_start_time(pid: int) -> Optional[str]:
-    """Return a process start time from /proc, or None (dead pid, no /proc)."""
+def proc_stat(pid: int) -> Optional[Tuple[str, str]]:
+    """Return (state, start time) of a process from /proc, or None (dead pid, no /proc)."""
     try:
         with open(f"/proc/{pid}/stat", "r") as f:
             stat = f.read()
@@ -427,7 +427,13 @@ def proc_start_time(pid: int) -> Optional[str]:
     # comm can contain spaces and ")", so only split what follows its last ")".
     # Those fields start at field 3 (state); starttime is field 22.
     after_comm = stat[stat.rindex(")") + 1 :].split()
-    return after_comm[22 - 3]
+    return after_comm[3 - 3], after_comm[22 - 3]
+
+
+def proc_start_time(pid: int) -> Optional[str]:
+    """Return a process start time from /proc, or None (dead pid, no /proc)."""
+    stat = proc_stat(pid)
+    return stat[1] if stat else None
 
 
 def _status_file(state_dir: str) -> str:

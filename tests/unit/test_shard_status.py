@@ -4,6 +4,7 @@ import os
 import socket
 import subprocess
 import sys
+import time
 from types import SimpleNamespace
 
 import pytest
@@ -17,6 +18,7 @@ from mmirage.shard_utils import (
     ShardStatus,
     _write_status,
     proc_start_time,
+    proc_stat,
     read_status,
     shard_state_dir,
 )
@@ -72,6 +74,21 @@ def test_running_shard_liveness(tmp_path, monkeypatch, identity, dead):
     assert summary.running == (0 if dead else 1)
     status = read_status(shard_state_dir(0, str(tmp_path)))
     assert (status.status == "failed") == dead
+
+
+@pytest.mark.skipif(proc_start_time(ME) is None, reason="needs /proc")
+def test_zombie_process_is_dead(tmp_path):
+    child = subprocess.Popen([sys.executable, "-c", "pass"])  # never reaped below
+    try:
+        while (stat := proc_stat(child.pid)) is not None and stat[0] != "Z":
+            time.sleep(0.01)
+        _write(tmp_path, "running", 1, **_local(child.pid, proc_start_time(child.pid)))
+
+        failed, _ = check_failed_shards(_cfg(tmp_path))
+    finally:
+        child.wait()
+
+    assert failed == [0]
 
 
 def test_success_written_during_liveness_check_is_kept(tmp_path, monkeypatch):

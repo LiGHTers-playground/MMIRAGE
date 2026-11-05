@@ -16,7 +16,7 @@ from mmirage.shard_utils import (
     ShardStatus,
     _mark_failure,
     format_duration,
-    proc_start_time,
+    proc_stat,
     read_status,
     shard_state_dir,
 )
@@ -92,8 +92,13 @@ def shard_process_alive(st: ShardStatus) -> bool:
     if st.pid is not None and st.hostname == socket.gethostname():
         if not _pid_alive(st.pid):
             return False
-        current = proc_start_time(st.pid)  # pids are reused
-        return None in (current, st.pid_start_time) or current == st.pid_start_time
+        stat = proc_stat(st.pid)
+        if stat is None:  # no /proc: the pid check is all we have
+            return True
+        state, start_time = stat
+        # Z: exited but not yet reaped by its parent. A start time mismatch
+        # means the pid was reused by another process.
+        return state != "Z" and st.pid_start_time in (None, start_time)
     if st.slurm_job_id:
         try:
             return not slurm_job_gone(st.slurm_job_id)
