@@ -119,11 +119,22 @@ def check_failed_shards(cfg: MMirageConfig) -> Tuple[List[int], ShardSummary]:
 
     for shard_id in range(num_shards):
         state_dir = shard_state_dir(shard_id, state_root)
-        status, attempt_count = get_shard_status(state_dir)
-        if status == "running" and not shard_process_alive(read_status(state_dir)):
-            logger.warning("Shard %s: %s", shard_id, STALE_RUNNING_ERROR)
-            _mark_failure(state_dir, STALE_RUNNING_ERROR)
-            status = "failed"
+        st = read_status(state_dir)
+        if st.status == "running" and not shard_process_alive(st):
+            # The attempt's process is dead, so it can no longer write: re-read
+            # in case it reported success while we checked it.
+            # ponytail: no lock, a retry started right now could be overwritten.
+            now = read_status(state_dir)
+            if (now.status, now.retry_count, now.pid) == (
+                "running",
+                st.retry_count,
+                st.pid,
+            ):
+                logger.warning("Shard %s: %s", shard_id, STALE_RUNNING_ERROR)
+                _mark_failure(state_dir, STALE_RUNNING_ERROR)
+                now.status = "failed"
+            st = now
+        status, attempt_count = st.status, st.retry_count
         if status == "success":
             success_count += 1
         elif status == "running":

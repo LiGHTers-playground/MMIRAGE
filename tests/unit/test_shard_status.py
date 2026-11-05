@@ -74,6 +74,22 @@ def test_running_shard_liveness(tmp_path, monkeypatch, identity, dead):
     assert (status.status == "failed") == dead
 
 
+def test_success_written_during_liveness_check_is_kept(tmp_path, monkeypatch):
+    _write(tmp_path, "running", 1, **_local(_dead_pid()))
+
+    def finish_then_die(st):
+        _write(tmp_path, "success", 1)
+        return False
+
+    monkeypatch.setattr(status_module, "shard_process_alive", finish_then_die)
+
+    failed, summary = check_failed_shards(_cfg(tmp_path))
+
+    assert failed == []
+    assert summary.successful == 1
+    assert read_status(shard_state_dir(0, str(tmp_path))).status == "success"
+
+
 def test_stale_running_shard_over_budget(tmp_path):
     _write(tmp_path, "running", 5, **_local(_dead_pid()))
 
