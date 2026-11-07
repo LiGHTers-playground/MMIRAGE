@@ -97,6 +97,28 @@ def test_step_after_a_filter_resolves_against_the_pre_filter_context(tmp_path):
     assert [o.type for o in outputs] == ["custom", "filter", "llm"]
 
 
+def test_context_in_the_message_does_not_include_the_filter_step(tmp_path):
+    # A filter declares no variable, so it must not show up as an empty name in
+    # the context a later step is reported against.
+    with open(MOCK_CUSTOM) as f:
+        cfg = yaml.safe_load(f)
+    cfg["processors"].append({"type": "llm", "server_args": {"model_path": "m"}})
+    cfg["processing_params"]["outputs"] += [
+        {"type": "filter", "predicate": "custom_result | length > 0"},
+        {"name": "answer", "type": "llm", "prompt": "{{ missing }}"},
+    ]
+    config_path = tmp_path / "config.yaml"
+    with open(config_path, "w") as f:
+        yaml.safe_dump(cfg, f)
+
+    with pytest.raises(
+        ValueError,
+        match=r"outputs\[2\] 'answer' is not computable given "
+        r"\['text', 'custom_result'\]$",
+    ):
+        load_mmirage_config(str(config_path))
+
+
 def test_mock_filter_config_declares_a_scorer_then_a_filter():
     cfg = load_mmirage_config(MOCK_FILTER)
     outputs = cfg.processing_params.outputs

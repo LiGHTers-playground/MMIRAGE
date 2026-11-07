@@ -1,7 +1,7 @@
 """Configuration dataclasses for MMIRAGE pipeline."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 from mmirage.config.loading import LoadingParams
 from mmirage.core.process.base import BaseProcessorConfig
@@ -117,24 +117,21 @@ class ProcessingParams:
     def _uncomputable_message(
         i: int, output_var: OutputVar, context: List[BaseVar]
     ) -> str:
-        # Only some steps (e.g. a filter) can say which names they are missing.
-        missing: Set[str] = getattr(output_var, "missing_names", lambda _: set())(
-            context
-        )
-        if missing:
-            return (
-                f"outputs[{i}] '{output_var.name}' references variables not "
-                f"declared before it: {sorted(missing)}"
-            )
-        deferred: Set[str] = getattr(output_var, "deferred_names", lambda _: set())(
-            context
-        )
-        if deferred:
-            names = ", ".join(f"'{v}'" for v in sorted(deferred))
-            return (
-                f"outputs[{i}]: {names} is a batch_api output, "
-                "only available after `mmirage merge`"
-            )
+        # A filter step is the only one that can name what it could not resolve.
+        if isinstance(output_var, FilterStep):
+            missing = output_var.missing_names(context)
+            if missing:
+                return (
+                    f"outputs[{i}] '{output_var.name}' references variables not "
+                    f"declared before it: {sorted(missing)}"
+                )
+            deferred = output_var.deferred_names(context)
+            if deferred:
+                names = ", ".join(f"'{v}'" for v in sorted(deferred))
+                return (
+                    f"outputs[{i}]: {names} is a batch_api output, "
+                    "only available after `mmirage merge`"
+                )
         context_names = [v.name for v in context]
         return (
             f"outputs[{i}] '{output_var.name}' is not computable given {context_names}"

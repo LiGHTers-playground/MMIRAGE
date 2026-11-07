@@ -7,13 +7,22 @@ from mmirage.config.utils import load_mmirage_config
 from mmirage.core.process.processors.batch_api.config import BatchApiOutputVar
 from mmirage.core.process.processors.filter.config import FilterStep
 from mmirage.core.process.processors.llm.config import LLMOutputVar
-from mmirage.core.process.variables import InputVar, OutputVar, VariableEnvironment
+from mmirage.core.process.variables import (
+    BaseVar,
+    InputVar,
+    OutputVar,
+    VariableEnvironment,
+)
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MOCK_CONFIG = os.path.join(REPO_ROOT, "configs", "config_mock_custom_module.yaml")
 
 
-def test_output_vars_are_available_at_map_time_by_default():
+def test_vars_are_available_at_map_time_by_default():
+    # Declared on BaseVar, so a step can read it off an input variable too:
+    # `deferred_names` walks a context that starts out as the inputs.
+    assert BaseVar.available_at_map_time is True
+    assert InputVar.available_at_map_time is True
     assert OutputVar.available_at_map_time is True
     assert LLMOutputVar.available_at_map_time is True
 

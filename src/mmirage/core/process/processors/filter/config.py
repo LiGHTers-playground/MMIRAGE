@@ -76,9 +76,7 @@ class FilterStep(OutputVar):
         """Referenced names whose value only exists after the shard map."""
         referenced = self.referenced_names()
         return {
-            v.name
-            for v in vars
-            if v.name in referenced and not getattr(v, "available_at_map_time", True)
+            v.name for v in vars if v.name in referenced and not v.available_at_map_time
         }
 
     def is_computable(self, vars: Sequence[BaseVar]) -> bool:
