@@ -28,11 +28,6 @@ def _fake(mapper: MMIRAGEMapper) -> FakeLenProcessor:
     return proc
 
 
-def test_validate_vars_accepts_a_filter_between_two_steps():
-    assert _mapper("score > 3").validate_vars()
-    assert not _mapper("nope > 3").validate_vars()
-
-
 def test_filter_counts_rows_and_later_steps_see_fewer_envs():
     mapper = _mapper("score > 3")
     envs, positions = mapper.rewrite_batch(

@@ -11,7 +11,6 @@ from mmirage.core.process.base import (
 )
 from mmirage.core.process.processors.filter.config import FilterStep
 from mmirage.core.process.variables import (
-    BaseVar,
     InputVar,
     OutputVar,
     VariableEnvironment,
@@ -23,8 +22,9 @@ logger = logging.getLogger(__name__)
 class MMIRAGEMapper:
     """Mapper for orchestrating variable transformations in the MMIRAGE pipeline.
 
-    Manages processors, validates variable dependencies, and applies
-    transformations to batches of data. Supports multimodal inputs.
+    Manages processors and applies transformations to batches of data.
+    Supports multimodal inputs. Output variables are checked for
+    computability when the config loads, in ``ProcessingParams``.
 
     Attributes:
         processors: Dictionary mapping processor types to processor instances.
@@ -73,31 +73,6 @@ class MMIRAGEMapper:
                 # it onto a config object that has no such field.
                 config.export_prompts_dir = export_prompts_dir  # pyright: ignore[reportAttributeAccessIssue]
             self.processors[config.type] = processor_cls(config, shard_id=shard_id)
-
-    def validate_vars(self) -> bool:
-        """Validate that all output variables are computable.
-
-        Checks that each output variable can be computed given the
-        available variables (inputs and previously computed outputs).
-
-        Returns:
-            True if all variables are computable, False otherwise.
-        """
-        vars = cast(List[BaseVar], self.input_vars.copy())
-
-        for output_var in self.output_vars:
-            if not output_var.is_computable(vars):
-                context = list(map(lambda v: v.name, vars))
-                logger.info(
-                    f"⚠️ Variable {output_var.name} not computable given current context: {context}"
-                )
-                return False
-
-            # A filter step declares no variable of its own.
-            if not isinstance(output_var, FilterStep):
-                vars.append(output_var)
-
-        return True
 
     def rewrite_batch(
         self,

@@ -79,6 +79,24 @@ def test_valid_filter_after_its_inputs_loads(tmp_path):
     assert [o.type for o in cfg.processing_params.outputs] == ["custom", "filter"]
 
 
+def test_step_after_a_filter_resolves_against_the_pre_filter_context(tmp_path):
+    # A filter declares no variable of its own, so the step after it still sees
+    # exactly the inputs and the outputs declared before the filter.
+    with open(MOCK_CUSTOM) as f:
+        cfg = yaml.safe_load(f)
+    cfg["processors"].append({"type": "llm", "server_args": {"model_path": "m"}})
+    cfg["processing_params"]["outputs"] += [
+        {"type": "filter", "predicate": "custom_result | length > 0"},
+        {"name": "answer", "type": "llm", "prompt": "{{ custom_result }}"},
+    ]
+    config_path = tmp_path / "config.yaml"
+    with open(config_path, "w") as f:
+        yaml.safe_dump(cfg, f)
+
+    outputs = load_mmirage_config(str(config_path)).processing_params.outputs
+    assert [o.type for o in outputs] == ["custom", "filter", "llm"]
+
+
 def test_mock_filter_config_declares_a_scorer_then_a_filter():
     cfg = load_mmirage_config(MOCK_FILTER)
     outputs = cfg.processing_params.outputs
