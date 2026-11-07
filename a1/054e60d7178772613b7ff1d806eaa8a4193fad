@@ -1,0 +1,21 @@
+tests/test_processing_params_validation.py
+  s_95bd80318259cc::t_6e7aa456fb219d 82-99
+src/mmirage/core/process/mapper.py
+  s_95bd80318259cc::t_a695747b677be6 25-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a1054e60d7178772613b7ff1d806eaa8a4193fad",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-opus-5"
+      },
+      "human_author": null
+    }
+  }
+}
