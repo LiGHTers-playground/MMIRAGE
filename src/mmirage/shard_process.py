@@ -210,9 +210,10 @@ def _map_split(
     # The positions are tracked beside the environments, so they can only
     # desync if a processor returns a batch of a different length than it was
     # given; `concatenate_datasets(axis=1)` would join the halves regardless.
-    assert len(kept) == len(ds_processed), (
-        f"{len(kept)} kept row indices for {len(ds_processed)} output rows"
-    )
+    if len(kept) != len(ds_processed):
+        raise RuntimeError(
+            f"{len(kept)} kept row indices for {len(ds_processed)} output rows"
+        )
 
     # Join the surviving input rows back on. `concatenate_datasets(axis=1)`
     # keeps features such as ClassLabel and Image as-is but raises on a
