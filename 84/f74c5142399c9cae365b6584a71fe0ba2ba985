@@ -51,11 +51,13 @@ docs/cli.md
   s_95bd80318259cc::t_4a482bad20089a 157-159
 src/mmirage/core/process/processors/batch_api/config.py
   s_95bd80318259cc::t_3854558effa5d7 68-70
+  s_95bd80318259cc::t_691f1f75e9ff08 5
 tests/test_filter_step.py
   s_95bd80318259cc::t_a9f9140e997460 3-15
   s_95bd80318259cc::t_50c64bc8d1d815 1-2,16
 src/mmirage/core/process/variables.py
   s_95bd80318259cc::t_f47a23de988de2 72-74,78
+  s_95bd80318259cc::t_691f1f75e9ff08 9
 ---
 {
   "schema_version": "authorship/3.0.0",
