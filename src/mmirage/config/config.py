@@ -121,8 +121,11 @@ class ProcessingParams:
         if isinstance(output_var, FilterStep):
             missing = output_var.missing_names(context)
             if missing:
+                # A filter step's `name` is unused and normally empty, so there
+                # is nothing worth quoting; say what the step is instead.
+                label = f"'{output_var.name}'" if output_var.name else "(filter step)"
                 return (
-                    f"outputs[{i}] '{output_var.name}' references variables not "
+                    f"outputs[{i}] {label} references variables not "
                     f"declared before it: {sorted(missing)}"
                 )
             deferred = output_var.deferred_names(context)

@@ -33,7 +33,9 @@ def _load_with_extra_output(tmp_path, base_config: str, output: dict):
 
 def test_unknown_name_is_rejected_at_load_with_the_name_in_the_message(tmp_path):
     with pytest.raises(
-        ValueError, match=r"outputs\[1\].*not declared before it.*'nope'"
+        ValueError,
+        match=r"outputs\[1\] \(filter step\) references variables not "
+        r"declared before it: \['nope'\]",
     ):
         _load_with_extra_output(
             tmp_path, MOCK_CUSTOM, {"type": "filter", "predicate": "nope > 1"}
