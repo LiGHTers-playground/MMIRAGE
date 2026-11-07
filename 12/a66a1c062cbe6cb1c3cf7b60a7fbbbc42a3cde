@@ -1,0 +1,23 @@
+src/mmirage/shard_utils.py
+  s_95bd80318259cc::t_5a440e5814b441 41-42,45-46,83-84,138-139
+tests/test_status_stats.py
+  s_95bd80318259cc::t_5a440e5814b441 20-22,26-27,33-34,40-41,49-51,66-67,82-83
+src/mmirage/cli_utils/status.py
+  s_95bd80318259cc::t_5a440e5814b441 183-189,218-224,300-302
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "12a66a1c062cbe6cb1c3cf7b60a7fbbbc42a3cde",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-opus-5"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
