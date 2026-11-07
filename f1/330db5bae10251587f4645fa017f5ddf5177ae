@@ -1,0 +1,21 @@
+src/mmirage/cli_utils/status.py
+  s_95bd80318259cc::t_6c0269d2fd0d11 183
+tests/test_status_stats.py
+  s_95bd80318259cc::t_2e6776dd702f6a 20,22,27,32,41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f1330db5bae10251587f4645fa017f5ddf5177ae",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-opus-5"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
