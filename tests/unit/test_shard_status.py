@@ -10,6 +10,7 @@ from types import SimpleNamespace
 import pytest
 
 from mmirage import cli
+from mmirage.cli_utils import slurm as slurm_module
 from mmirage.cli_utils import status as status_module
 from mmirage.cli_utils.status import check_failed_shards
 from mmirage.config.config import ExecutionParams
@@ -135,3 +136,22 @@ def test_slurm_retry_loop_relaunches_stale_running_shard(tmp_path, monkeypatch):
 
     assert cli.launch_pipeline(_cfg(tmp_path), "cfg.yaml") == 0
     assert submitted == [[], [0]]
+
+
+@pytest.mark.parametrize(
+    "returncode,stdout,stderr,gone",
+    [
+        (0, "", "", True),
+        (0, "  42  RUNNING\n", "", False),
+        (1, "", "slurm_load_jobs error: Invalid job id specified\n", True),
+        (1, "", "slurm_load_jobs error: Unable to contact slurm controller\n", False),
+    ],
+    ids=["empty listing", "listed", "purged job", "controller down"],
+)
+def test_slurm_job_gone(monkeypatch, returncode, stdout, stderr, gone):
+    def fake_run(args, **kwargs):
+        return subprocess.CompletedProcess(args, returncode, stdout, stderr)
+
+    monkeypatch.setattr(slurm_module.subprocess, "run", fake_run)
+
+    assert slurm_module.slurm_job_gone("42") == gone
