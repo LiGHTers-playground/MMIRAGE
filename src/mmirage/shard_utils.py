@@ -14,7 +14,7 @@ import threading
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import humanize
 from datasets import DatasetDict
@@ -244,6 +244,7 @@ class ShardStatus:
     error: Optional[str] = None
     hostname: Optional[str] = None
     pid: Optional[int] = None
+    pid_start_time: Optional[str] = None
     slurm_job_id: Optional[str] = None
     slurm_array_task_id: Optional[str] = None
     datasets: Optional[List[Dict[str, Any]]] = None
@@ -287,6 +288,7 @@ class ShardStatus:
             error=data.get("error"),
             hostname=data.get("hostname"),
             pid=pid,
+            pid_start_time=data.get("pid_start_time"),
             slurm_job_id=data.get("slurm_job_id"),
             slurm_array_task_id=data.get("slurm_array_task_id"),
             datasets=datasets,
@@ -304,6 +306,7 @@ class ShardStatus:
             "error": self.error,
             "hostname": self.hostname,
             "pid": self.pid,
+            "pid_start_time": self.pid_start_time,
             "slurm_job_id": self.slurm_job_id,
             "slurm_array_task_id": self.slurm_array_task_id,
             "datasets": self.datasets,
@@ -413,6 +416,26 @@ def _cleanup_old_shard_data(out_dir: str):
         logger.info(f"Removed old shard output: {out_dir}")
 
 
+def proc_stat(pid: int) -> Optional[Tuple[str, str]]:
+    """Return (state, start time) of a process from /proc, or None (dead pid, no /proc)."""
+    try:
+        with open(f"/proc/{pid}/stat", "r") as f:
+            stat = f.read()
+    except OSError:
+        return None
+    # Line format (man proc_pid_stat): "pid (comm) state ppid ... starttime ...".
+    # comm can contain spaces and ")", so only split what follows its last ")".
+    # Those fields start at field 3 (state); starttime is field 22.
+    after_comm = stat[stat.rindex(")") + 1 :].split()
+    return after_comm[3 - 3], after_comm[22 - 3]
+
+
+def proc_start_time(pid: int) -> Optional[str]:
+    """Return a process start time from /proc, or None (dead pid, no /proc)."""
+    stat = proc_stat(pid)
+    return stat[1] if stat else None
+
+
 def _status_file(state_dir: str) -> str:
     """Canonical status file path."""
     return os.path.join(state_dir, "status.json")
@@ -481,6 +504,7 @@ def _mark_running(
         error=None,
         hostname=socket.gethostname(),
         pid=os.getpid(),
+        pid_start_time=proc_start_time(os.getpid()),
         slurm_job_id=os.environ.get("SLURM_JOB_ID"),
         slurm_array_task_id=os.environ.get("SLURM_ARRAY_TASK_ID"),
         datasets=[

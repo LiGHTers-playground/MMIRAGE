@@ -218,7 +218,7 @@ def launch_pipeline(
             return 0
 
         if not failed_shards:
-            logger.error("Pipeline ended with shards that exceeded max retries")
+            logger.error("Pipeline ended with no retryable shards: %s", summary)
             return 1
 
         logger.warning("Retrying failed shards: %s", ",".join(map(str, failed_shards)))

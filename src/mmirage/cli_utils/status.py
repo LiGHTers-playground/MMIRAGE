@@ -2,18 +2,22 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import logging
 import os
+import socket
 import sys
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple
 
-from mmirage.cli_utils.slurm import submit_slurm_job
+from mmirage.cli_utils.slurm import slurm_job_gone, submit_slurm_job
 from mmirage.config.config import MMirageConfig
 from mmirage.shard_utils import (
     ShardStatus,
+    _mark_failure,
     format_duration,
+    proc_stat,
     read_status,
     shard_state_dir,
 )
@@ -67,8 +71,48 @@ def get_shard_status(state_dir: str) -> Tuple[str, int]:
     return (parsed.status, parsed.retry_count)
 
 
+STALE_RUNNING_ERROR = "stale running state (process died without reporting)"
+
+
+def _pid_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)  # signal 0 only checks that the pid exists
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        pass
+    return True
+
+
+def shard_process_alive(st: ShardStatus, job_gone: Callable[[str], bool]) -> bool:
+    """Return False only when the shard's process is known to be dead.
+
+    The pid is checked first: around a local run, SLURM_JOB_ID may name a
+    salloc allocation that outlives the shard.
+    """
+    if st.pid is not None and st.hostname == socket.gethostname():
+        if not _pid_alive(st.pid):
+            return False
+        stat = proc_stat(st.pid)
+        if stat is None:  # no /proc: the pid check is all we have
+            return True
+        state, start_time = stat
+        # Z: exited but not yet reaped by its parent. A start time mismatch
+        # means the pid was reused by another process.
+        return state != "Z" and st.pid_start_time in (None, start_time)
+    if st.slurm_job_id:
+        try:
+            return not job_gone(st.slurm_job_id)
+        except OSError:  # no squeue on this machine
+            return True
+    return True
+
+
 def check_failed_shards(cfg: MMirageConfig) -> Tuple[List[int], ShardSummary]:
-    """Return retryable failed shards and a compact summary."""
+    """Return retryable failed shards and a compact summary.
+
+    "running" shards whose process is dead are rewritten as failed first.
+    """
     state_root = cfg.loading_params.get_state_root()
 
     num_shards = cfg.loading_params.get_num_shards()
@@ -79,8 +123,26 @@ def check_failed_shards(cfg: MMirageConfig) -> Tuple[List[int], ShardSummary]:
     exhausted_count = 0
     allowed_attempts = max_allowed_attempts(max_retries)
 
+    # Shared-SGLang workers share one SLURM job: query squeue once per job.
+    job_gone = functools.cache(slurm_job_gone)
     for shard_id in range(num_shards):
-        status, attempt_count = get_shard_status(shard_state_dir(shard_id, state_root))
+        state_dir = shard_state_dir(shard_id, state_root)
+        st = read_status(state_dir)
+        if st.status == "running" and not shard_process_alive(st, job_gone):
+            # The attempt's process is dead, so it can no longer write: re-read
+            # in case it reported success while we checked it.
+            # ponytail: no lock, a retry started right now could be overwritten.
+            now = read_status(state_dir)
+            if (now.status, now.retry_count, now.pid) == (
+                "running",
+                st.retry_count,
+                st.pid,
+            ):
+                logger.warning("Shard %s: %s", shard_id, STALE_RUNNING_ERROR)
+                _mark_failure(state_dir, STALE_RUNNING_ERROR)
+                now.status = "failed"
+            st = now
+        status, attempt_count = st.status, st.retry_count
         if status == "success":
             success_count += 1
         elif status == "running":

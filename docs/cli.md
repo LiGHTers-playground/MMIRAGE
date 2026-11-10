@@ -77,6 +77,11 @@ mmirage check --config configs/config.yaml [--retry] [-y] [--stats] [--metadata-
 
 Exits with code `0` if all shards succeeded, `1` otherwise.
 
+A shard killed by a SLURM timeout, OOM or `scancel` stays `running`. Commands
+that read shard status check whether its process is still alive (pid on the same
+host, else the SLURM job via `squeue`) and, if not, mark it `failed` so it is
+retried. When this cannot be determined, the shard stays `running`.
+
 For a config declaring a `batch_api` processor, `check` reports the provider batch status from the metadata receipts instead of the shard state — see [Batch API](batch_api.md). It exits `1` only when a batch failed at provider level, batches still running are not a failure, and `--retry`, `-y` and `--stats` are ignored.
 
 ---
