@@ -52,6 +52,7 @@ def _create_backend(config: ImageGenConfig) -> ImageGenerationBackend:
     if config.backend == "external":
         assert config.external is not None  # validated in __post_init__
         client = config.external
+        base_url = client.base_url
     elif config.backend == "sglang":
         from mmirage.core.process.processors.image_gen.sglang_server import (
             MMIRAGE_SGLANG_BASE_URL,
@@ -69,7 +70,7 @@ def _create_backend(config: ImageGenConfig) -> ImageGenerationBackend:
         raise ValueError(f"Unknown image_gen backend={config.backend!r}")
 
     return SGLangImageBackend(
-        base_url=client.base_url if config.backend == "external" else base_url,  # pyright: ignore[reportAttributeAccessIssue]
+        base_url=base_url,
         api_key=client.api_key,
         timeout_seconds=client.timeout_seconds,
         request_model=client.request_model,
@@ -122,7 +123,7 @@ class ImageGenProcessor(BaseProcessor[ImageGenOutputVar]):
         base_seed: int,
         batch_offset: int,
         count: int,
-    ) -> List[int]:
+    ) -> List[Optional[int]]:
         """Compute per-sample deterministic seeds that are unique across shards.
 
         The seed for a sample is:
@@ -260,7 +261,7 @@ class ImageGenProcessor(BaseProcessor[ImageGenOutputVar]):
             if negative_prompt_template is not None
             else None
         )
-        seeds: List[Optional[int]] = (  # pyright: ignore[reportAssignmentType]
+        seeds: List[Optional[int]] = (
             self._compute_seeds(int(output_var.seed), batch_offset, len(chunk))
             if output_var.seed is not None
             else [None] * len(chunk)

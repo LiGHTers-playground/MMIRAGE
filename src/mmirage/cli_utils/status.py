@@ -9,7 +9,7 @@ import os
 import socket
 import sys
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple
 
 from mmirage.cli_utils.slurm import slurm_job_gone, submit_slurm_job
 from mmirage.config.config import MMirageConfig
@@ -188,7 +188,7 @@ def confirm_retry(count: int, confirm_mode: Literal["prompt", "yes"]) -> bool:
     return response.strip().lower() == "y"
 
 
-def status_exit_code(failed_shards: Sequence[int], summary: ShardSummary) -> int:
+def status_exit_code(failed_shards: List[int], summary: ShardSummary) -> int:
     """Map shard status to an exit code."""
     return (
         0
@@ -203,7 +203,7 @@ def status_exit_code(failed_shards: Sequence[int], summary: ShardSummary) -> int
 def submit_failed_shards(
     cfg: MMirageConfig,
     config_path: str,
-    failed_shards: Sequence[int],
+    failed_shards: List[int],
     confirm_mode: Literal["prompt", "yes"],
     collect_stats: bool = False,
 ) -> int:

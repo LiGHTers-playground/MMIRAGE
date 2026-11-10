@@ -7,7 +7,7 @@ import os
 import shlex
 import subprocess
 import time
-from typing import Optional, Sequence
+from typing import List, Optional
 
 from mmirage.cli_utils.runtime import create_directories, expand_path, get_project_root
 from mmirage.config.config import MMirageConfig
@@ -60,7 +60,7 @@ def build_sbatch_script(
     cfg: MMirageConfig,
     config_path: str,
     collect_stats: bool = False,
-    shard_ids: Optional[Sequence[int]] = None,
+    shard_ids: Optional[List[int]] = None,
 ) -> str:
     """Build the sbatch payload for shard processing."""
     project_root = get_project_root(cfg)
@@ -135,7 +135,7 @@ def build_sbatch_script(
 def submit_slurm_job(
     cfg: MMirageConfig,
     config_path: str,
-    shard_ids: Optional[Sequence[int]] = None,
+    shard_ids: Optional[List[int]] = None,
     collect_stats: bool = False,
 ) -> Optional[int]:
     """Submit a SLURM shard-processing job and return its job ID."""

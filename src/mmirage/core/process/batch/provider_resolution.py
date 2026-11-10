@@ -7,7 +7,7 @@ provider configuration logic can be reused by receiver and submission flows.
 from __future__ import annotations
 
 from dataclasses import asdict
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Sequence, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Type
 
 from mmirage.config.batch_provider import BatchProviderConfig
 from mmirage.core.process.batch.metadata_utils import BatchMetadataRecord
@@ -64,7 +64,7 @@ class BatchProviderConfigRegistry:
 
 
 def _discover_required_providers(
-    metadata_records: Sequence[BatchMetadataRecord],
+    metadata_records: List[BatchMetadataRecord],
 ) -> List[str]:
     providers: List[str] = []
     seen = set()
@@ -107,7 +107,7 @@ def _extract_batch_provider_blocks(cfg: MMirageConfig) -> Dict[str, Dict[str, An
 
 
 def _instantiate_provider_config(
-    provider: str, raw_block: Mapping[str, Any]
+    provider: str, raw_block: Dict[str, Any]
 ) -> BatchProviderConfig:
     """Instantiate the registered config class for ``provider``."""
     payload = dict(raw_block)
@@ -117,7 +117,7 @@ def _instantiate_provider_config(
     return config_cls(**payload)
 
 
-def resolve_single_provider_config(raw_block: Mapping[str, Any]) -> BatchProviderConfig:
+def resolve_single_provider_config(raw_block: Dict[str, Any]) -> BatchProviderConfig:
     """Resolve a single provider config from a raw batch block.
 
     Raises ValueError for missing providers, unknown providers, or invalid
@@ -162,7 +162,7 @@ def build_all_provider_configs(cfg: "MMirageConfig") -> Dict[str, BatchProviderC
 
 
 def resolve_provider_configs(
-    metadata_records: Sequence[BatchMetadataRecord],
+    metadata_records: List[BatchMetadataRecord],
     cfg: "MMirageConfig",
 ) -> Dict[str, BatchProviderConfig]:
     """Resolve provider configs required by receiver metadata.

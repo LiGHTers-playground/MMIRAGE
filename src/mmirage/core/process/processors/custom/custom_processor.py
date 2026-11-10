@@ -59,6 +59,8 @@ class CustomProcessor(BaseProcessor[CustomOutputVar]):
             max_workers=self.config.max_workers,
             context=multiprocessing.get_context(self.config.start_method),
             initializer=initialize_worker,
+            # pebble annotates `initargs` as a list, while its own default
+            # for it is `()`.
             initargs=(self.config.script_path, self.config.function_name),  # pyright: ignore[reportArgumentType]
         )
 
@@ -109,6 +111,8 @@ class CustomProcessor(BaseProcessor[CustomOutputVar]):
         for index, row_dict in enumerate(row_dicts):
             future = self._pool.schedule(
                 execute_custom_function,
+                # pebble annotates `args` as a list and `timeout` as a float,
+                # while its own defaults for them are `()` and `None`.
                 args=(row_dict,),  # pyright: ignore[reportArgumentType]
                 timeout=timeout_seconds,  # pyright: ignore[reportArgumentType]
             )

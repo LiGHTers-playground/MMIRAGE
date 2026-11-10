@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, Literal, Optional, Sequence
+from typing import Any, Dict, List, Literal, Optional
 
 from jinja2 import Environment, meta
 
@@ -66,7 +66,7 @@ class BatchApiOutputVar(OutputVar):
     output_schema: list[str] = field(default_factory=list)
     output_type: str = ""
 
-    def is_computable(self, vars: Sequence[BaseVar]) -> bool:
+    def is_computable(self, vars: List[BaseVar]) -> bool:
         """Check if all variables referenced in the prompt are available."""
         parsed_content = env.parse(self.prompt)
         template_vars = meta.find_undeclared_variables(parsed_content)

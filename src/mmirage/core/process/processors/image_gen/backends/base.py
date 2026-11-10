@@ -28,15 +28,15 @@ class ImageGenerationBackend(Protocol):
 
         Args:
             prompts: Positive prompt strings, one per sample.
-            negative_prompts: Optional list of negative prompts aligned with
+            negative_prompts: Optional negative prompts aligned with
                 ``prompts``.  ``None`` means no negative prompts at all;
                 individual ``None`` elements mean no negative prompt for that
                 sample.
             params: Shared generation kwargs (width, height,
                 num_inference_steps, guidance_scale, …).
             seeds: Per-sample integer seeds for deterministic generation, or
-                ``None`` elements for unseeded samples.  The list is always
-                the same length as ``prompts``.
+                ``None`` elements for unseeded samples.  Always the same
+                length as ``prompts``.
 
         Returns:
             List of ``PIL.Image`` objects, one per prompt, in the same order.
