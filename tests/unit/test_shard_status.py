@@ -95,7 +95,7 @@ def test_zombie_process_is_dead(tmp_path):
 def test_success_written_during_liveness_check_is_kept(tmp_path, monkeypatch):
     _write(tmp_path, "running", 1, **_local(_dead_pid()))
 
-    def finish_then_die(st):
+    def finish_then_die(st, job_gone):
         _write(tmp_path, "success", 1)
         return False
 
@@ -136,6 +136,26 @@ def test_slurm_retry_loop_relaunches_stale_running_shard(tmp_path, monkeypatch):
 
     assert cli.launch_pipeline(_cfg(tmp_path), "cfg.yaml") == 0
     assert submitted == [[], [0]]
+
+
+def test_squeue_runs_once_per_job(tmp_path, monkeypatch):
+    queried = []
+    monkeypatch.setattr(
+        status_module, "slurm_job_gone", lambda job: queried.append(job)
+    )
+    cfg = _cfg(tmp_path)
+    cfg.loading_params = LoadingParams(num_shards=3, state_dir=str(tmp_path))
+    for shard_id in range(3):
+        _write_status(
+            shard_state_dir(shard_id, str(tmp_path)),
+            ShardStatus(
+                status="running", retry_count=1, hostname="node", slurm_job_id="7"
+            ),
+        )
+
+    check_failed_shards(cfg)
+
+    assert queried == ["7"]
 
 
 @pytest.mark.parametrize(

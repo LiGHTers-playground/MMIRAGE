@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import logging
 import os
 import socket
 import sys
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple
 
 from mmirage.cli_utils.slurm import slurm_job_gone, submit_slurm_job
 from mmirage.config.config import MMirageConfig
@@ -83,7 +84,7 @@ def _pid_alive(pid: int) -> bool:
     return True
 
 
-def shard_process_alive(st: ShardStatus) -> bool:
+def shard_process_alive(st: ShardStatus, job_gone: Callable[[str], bool]) -> bool:
     """Return False only when the shard's process is known to be dead.
 
     The pid is checked first: around a local run, SLURM_JOB_ID may name a
@@ -101,7 +102,7 @@ def shard_process_alive(st: ShardStatus) -> bool:
         return state != "Z" and st.pid_start_time in (None, start_time)
     if st.slurm_job_id:
         try:
-            return not slurm_job_gone(st.slurm_job_id)
+            return not job_gone(st.slurm_job_id)
         except OSError:  # no squeue on this machine
             return True
     return True
@@ -122,10 +123,12 @@ def check_failed_shards(cfg: MMirageConfig) -> Tuple[List[int], ShardSummary]:
     exhausted_count = 0
     allowed_attempts = max_allowed_attempts(max_retries)
 
+    # Shared-SGLang workers share one SLURM job: query squeue once per job.
+    job_gone = functools.cache(slurm_job_gone)
     for shard_id in range(num_shards):
         state_dir = shard_state_dir(shard_id, state_root)
         st = read_status(state_dir)
-        if st.status == "running" and not shard_process_alive(st):
+        if st.status == "running" and not shard_process_alive(st, job_gone):
             # The attempt's process is dead, so it can no longer write: re-read
             # in case it reported success while we checked it.
             # ponytail: no lock, a retry started right now could be overwritten.
