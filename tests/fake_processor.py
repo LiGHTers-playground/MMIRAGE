@@ -4,7 +4,7 @@ Sets ``output_var.name`` to ``len(text)`` and records the batch sizes it saw.
 """
 
 from dataclasses import dataclass
-from typing import List, Literal, Sequence
+from typing import List, Literal
 
 from mmirage.core.process.base import (
     BaseProcessor,
@@ -24,7 +24,7 @@ class FakeConfig(BaseProcessorConfig):
 class FakeOutputVar(OutputVar):
     type: str = "fake_len"
 
-    def is_computable(self, vars: Sequence[BaseVar]) -> bool:
+    def is_computable(self, vars: List[BaseVar]) -> bool:
         return True
 
 

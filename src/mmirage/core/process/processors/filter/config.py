@@ -5,7 +5,7 @@ Jinja2 expression predicate is falsy. It produces no variable of its own.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Literal, Optional, Sequence, Set, Tuple
+from typing import List, Literal, Optional, Set, Tuple
 
 from jinja2 import Environment, StrictUndefined, TemplateSyntaxError, meta
 
@@ -68,21 +68,21 @@ class FilterStep(OutputVar):
         # `meta` only reports names inside a template; a bare expression yields none.
         return meta.find_undeclared_variables(env.parse("{{ " + self.predicate + " }}"))
 
-    def missing_names(self, vars: Sequence[BaseVar]) -> Set[str]:
+    def missing_names(self, vars: List[BaseVar]) -> Set[str]:
         """Referenced names that no earlier variable declares."""
         return self.referenced_names() - {v.name for v in vars}
 
-    def deferred_names(self, vars: Sequence[BaseVar]) -> Set[str]:
+    def deferred_names(self, vars: List[BaseVar]) -> Set[str]:
         """Referenced names whose value only exists after the shard map."""
         referenced = self.referenced_names()
         return {
             v.name for v in vars if v.name in referenced and not v.available_at_map_time
         }
 
-    def is_computable(self, vars: Sequence[BaseVar]) -> bool:
+    def is_computable(self, vars: List[BaseVar]) -> bool:
         return not self.missing_names(vars) and not self.deferred_names(vars)
 
-    def apply(self, envs: Sequence[VariableEnvironment]) -> FilterResult:
+    def apply(self, envs: List[VariableEnvironment]) -> FilterResult:
         """Evaluate the predicate on each environment.
 
         A row whose predicate raises (missing value, `None` in a comparison,
