@@ -243,6 +243,11 @@ step. Filters apply, so use `foo | length > 0` rather than `foo.len`. The
 `{{ score > 0.5 }}` form is accepted too, but YAML reads a bare `{{` as a
 mapping, so it must be quoted: `predicate: "{{ score > 0.5 }}"`.
 
+A filter step must come before any `batch_api` output: batch requests are
+submitted before later steps run, and `mmirage merge` reads them back from the
+receipts, so a later filter could not keep its rows out of the merged result.
+The config is rejected at load otherwise.
+
 A row whose predicate raises — a missing value, `None` in a comparison, a
 misspelled attribute — is dropped and counted in `rows_dropped_by_error`
 rather than `rows_filtered`. A step whose predicate raises on every row it

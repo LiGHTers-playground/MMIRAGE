@@ -137,3 +137,29 @@ def test_mock_filter_config_declares_a_scorer_then_a_filter():
 )
 def test_shipped_configs_still_load(config_path):
     load_mmirage_config(config_path)
+
+
+def test_filter_after_a_batch_api_output_is_rejected(tmp_path):
+    # The batch requests are submitted before the filter runs, and merge reads
+    # the receipts, so rows the filter drops would come back in the merge.
+    with pytest.raises(
+        ValueError,
+        match=r"outputs\[1\] \(filter step\) comes after the batch_api output "
+        r"'formatted_answer'",
+    ):
+        _load_with_extra_output(
+            tmp_path, MOCK_OPENAI_BATCH, {"type": "filter", "predicate": "text"}
+        )
+
+
+def test_filter_before_a_batch_api_output_is_accepted(tmp_path):
+    with open(MOCK_OPENAI_BATCH) as f:
+        cfg = yaml.safe_load(f)
+    cfg["processing_params"]["outputs"].insert(
+        0, {"type": "filter", "predicate": "text | length > 0"}
+    )
+    config_path = tmp_path / "config.yaml"
+    with open(config_path, "w") as f:
+        yaml.safe_dump(cfg, f)
+
+    load_mmirage_config(str(config_path))

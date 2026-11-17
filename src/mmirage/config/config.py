@@ -109,9 +109,29 @@ class ProcessingParams:
         for i, output_var in enumerate(self.outputs):
             if not output_var.is_computable(context):
                 raise ValueError(self._uncomputable_message(i, output_var, context))
+            if isinstance(output_var, FilterStep):
+                # Batch requests are submitted before a later filter runs, and
+                # `mmirage merge` reads the receipts, not the filtered shard:
+                # the rows the filter drops would come back in the merge.
+                deferred = [v.name for v in context if not v.available_at_map_time]
+                if deferred:
+                    names = ", ".join(f"'{name}'" for name in deferred)
+                    raise ValueError(
+                        f"outputs[{i}] {self._filter_label(output_var)} comes after "
+                        f"the batch_api output {names}: the batch requests are "
+                        "submitted before it runs, so `mmirage merge` would bring "
+                        "back the rows it drops. Put the filter before the "
+                        "batch_api output."
+                    )
             # A filter step declares no variable of its own.
             if not isinstance(output_var, FilterStep):
                 context.append(output_var)
+
+    @staticmethod
+    def _filter_label(step: FilterStep) -> str:
+        # A filter step's `name` is unused and normally empty, so there is
+        # nothing worth quoting; say what the step is instead.
+        return f"'{step.name}'" if step.name else "(filter step)"
 
     @staticmethod
     def _uncomputable_message(
@@ -121,11 +141,9 @@ class ProcessingParams:
         if isinstance(output_var, FilterStep):
             missing = output_var.missing_names(context)
             if missing:
-                # A filter step's `name` is unused and normally empty, so there
-                # is nothing worth quoting; say what the step is instead.
-                label = f"'{output_var.name}'" if output_var.name else "(filter step)"
                 return (
-                    f"outputs[{i}] {label} references variables not "
+                    f"outputs[{i}] {ProcessingParams._filter_label(output_var)} "
+                    "references variables not "
                     f"declared before it: {sorted(missing)}"
                 )
             deferred = output_var.deferred_names(context)
