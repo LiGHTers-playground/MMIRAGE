@@ -120,6 +120,7 @@ def rewrite_batch(
     renderer: TemplateRenderer,
     image_base_path: Optional[str] = None,
     kept: Optional[List[int]] = None,
+    row_offset: int = 0,
 ) -> Dict[str, List[Any]]:
     """Rewrite a batch of samples by applying transformations.
     Args:
@@ -132,10 +133,17 @@ def rewrite_batch(
         kept: When given, the dataset index of every row that survived the
             filter steps is appended to it, in the order the rows come back
             from the mapper. Requires ``indices``.
+        row_offset: Rows of the shard that come before this split, so that
+            ``row_offset + indices`` are positions in the shard.
     Returns:
         Dictionary mapping output keys to lists of rendered values.
     """
-    batch_environment, positions = mapper.rewrite_batch(batch, image_base_path)
+    source_indices = (
+        None if indices is None else [row_offset + index for index in indices]
+    )
+    batch_environment, positions = mapper.rewrite_batch(
+        batch, image_base_path, source_indices=source_indices
+    )
     if kept is not None:
         if indices is None:
             raise ValueError(
@@ -160,6 +168,7 @@ def _map_split(
     batch_size: int,
     remove_columns: bool,
     desc: str,
+    row_offset: int = 0,
 ) -> Dataset:
     """Map one dataset (or one split of a dataset dict) through ``rewrite_batch``.
 
@@ -201,6 +210,7 @@ def _map_split(
             "renderer": renderer,
             "image_base_path": image_base_path,
             "kept": kept,
+            "row_offset": row_offset,
         },
         remove_columns=split_ds.column_names,
     )
@@ -355,6 +365,9 @@ def main():
                 gpu_poller.start()
 
             ds_processed_all: List[Optional[DatasetLike]] = []
+            # Position in the shard of the first row of the next split, so that
+            # batch requests record rows unique across splits and datasets.
+            row_offset = 0
             for ds_idx, ds_shard in enumerate(ds_all_shard):
                 ds_config = datasets_config[ds_idx]
 
@@ -366,6 +379,11 @@ def main():
                 desc = f"Shard {shard_id}/{last_shard_id} dataset {ds_idx}"
                 ds_processed: DatasetLike
                 if isinstance(ds_shard, DatasetDict):
+                    # Each split's rows follow those of the splits before it.
+                    split_offsets = {}
+                    for split, split_ds in ds_shard.items():
+                        split_offsets[split] = row_offset
+                        row_offset += len(split_ds)
                     ds_processed = DatasetDict(
                         {
                             split: _map_split(
@@ -376,6 +394,7 @@ def main():
                                 batch_size=loading_params.get_batch_size(),
                                 remove_columns=processing_params.remove_columns,
                                 desc=f"{desc} split {split}",
+                                row_offset=split_offsets[split],
                             )
                             for split, split_ds in ds_shard.items()
                         }
@@ -389,7 +408,9 @@ def main():
                         batch_size=loading_params.get_batch_size(),
                         remove_columns=processing_params.remove_columns,
                         desc=desc,
+                        row_offset=row_offset,
                     )
+                    row_offset += len(ds_shard)
                 # Drain stateful batch accumulators once every split of this dataset is mapped.
                 mapper.finalize_processors()
 

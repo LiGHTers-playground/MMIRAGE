@@ -78,12 +78,16 @@ class MMIRAGEMapper:
         self,
         batch: Dict[str, List[Any]],
         image_base_path: Optional[str] = None,
+        source_indices: Optional[List[int]] = None,
     ) -> Tuple[List[VariableEnvironment], List[int]]:
         """Transform a batch of samples by computing output variables.
 
         Args:
             batch: Dictionary mapping column names to lists of values.
             image_base_path: Optional base directory for resolving relative image paths.
+            source_indices: The rows' positions in the shard, when known. Each
+                processor is told, through ``begin_batch``, those of the rows
+                that survived the filter steps before it.
 
         Returns:
             The VariableEnvironments with all output variables computed, and the
@@ -129,6 +133,8 @@ class MMIRAGEMapper:
                 )
 
             processor = self.processors[output_var.type]
+            if source_indices is not None:
+                processor.begin_batch([source_indices[p] for p in positions])
             batch_environment = processor.batch_process_sample(
                 batch_environment, output_var
             )
