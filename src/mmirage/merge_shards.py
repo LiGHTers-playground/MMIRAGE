@@ -84,7 +84,11 @@ def merge_dataset_dir(dataset_dir: str, output_dir: str) -> MergeReport:
 
     shard_dirs = _list_shard_dirs(dataset_dir)
     if not shard_dirs:
-        raise RuntimeError(f"No shard_* folders found in {dataset_dir}.")
+        raise RuntimeError(
+            f"No shard_* folders found in {dataset_dir}. "
+            "A shard that wrote 0 rows creates no shard_* folder; "
+            "see rows_written in `mmirage stats`."
+        )
 
     shard_dsets: List[DatasetLike] = []
     skipped_invalid_dirs = 0
@@ -114,7 +118,9 @@ def merge_dataset_dir(dataset_dir: str, output_dir: str) -> MergeReport:
         raise RuntimeError(
             f"No non-empty shards found in {dataset_dir}. "
             f"empty/invalid dirs: {skipped_invalid_dirs}, "
-            f"zero-row datasets: {skipped_zero_rows}."
+            f"zero-row datasets: {skipped_zero_rows}. "
+            "A shard that wrote 0 rows creates no shard_* folder; "
+            "see rows_written in `mmirage stats`."
         )
 
     ds_merged = _merge_shards(shard_dsets)
