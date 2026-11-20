@@ -1,0 +1,42 @@
+src/mmirage/shard_process.py
+  s_95bd80318259cc::t_552ba7b06b5480 118-119,123,128-129,147,155-158
+  s_95bd80318259cc::t_a95622d4d438af 176-180,182-201,205,212,214-224,226
+  s_95bd80318259cc::t_c1916d62bd5e6d 423-434
+  s_95bd80318259cc::t_d43ad438597cf1 472-473
+  s_95bd80318259cc::t_f7e32ed89b1e9b 13,20
+  s_95bd80318259cc::t_1eb587293beb42 133-135,146,148-154
+src/mmirage/core/process/mapper.py
+  s_95bd80318259cc::t_3a009fedc2b2b2 4,105,113-117,125,147,160
+tests/fake_processor.py
+  s_95bd80318259cc::t_eb755ebb79e86a 1-47
+tests/test_integration_batch_pipeline.py
+  s_95bd80318259cc::t_3ba9e300af6608 90
+src/mmirage/core/process/processors/filter/config.py
+  s_95bd80318259cc::t_3a009fedc2b2b2 26-28,104
+tests/test_shard_rewrite.py
+  s_95bd80318259cc::t_480e900e532529 1-57,59-82,90-92,95-151
+  s_95bd80318259cc::t_ee01a7638ab178 58
+  s_95bd80318259cc::t_8ce242dfd51b7f 83-84
+  s_95bd80318259cc::t_2e35dc5a9f5fae 85-89
+  s_95bd80318259cc::t_9e69ecc29ad922 93-94
+tests/test_filter_mapper.py
+  s_95bd80318259cc::t_41a8c665201548 6,10
+  s_95bd80318259cc::t_ed7998da8b225d 92-93
+  s_95bd80318259cc::t_3ba9e300af6608 38-40,43,63,66,71-91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "72c68089d2c87e242d37617d23c162a1c1230f7c",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-opus-5"
+      },
+      "human_author": null
+    }
+  }
+}
