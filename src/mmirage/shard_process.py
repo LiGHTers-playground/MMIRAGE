@@ -261,6 +261,12 @@ def main():
 
         if shard_rows == 0:
             # Nothing to process: skip model loading and record an empty success.
+            # An earlier run may have left output behind, and this shard writes
+            # no folder to replace it, so clear it here. The retry cleanup above
+            # does not cover this: it only runs from the second attempt on, and
+            # a rerun with a fresh or cleared state directory is attempt #1.
+            for ds_config in datasets_config:
+                _cleanup_old_shard_data(_dataset_out_dir(shard_id, ds_config))
             logger.info(
                 f"Logical shard {shard_id} has no input rows; marking success "
                 "without loading processors."
@@ -325,6 +331,10 @@ def main():
                 # A 0-row dataset cannot be cast or saved; None means "nothing to write".
                 ds_to_save = _drop_empty_splits(ds_processed)
                 if ds_to_save is None:
+                    # Nothing will be saved for this dataset, so an earlier
+                    # run's output would survive. Clear it for the same reason
+                    # as the empty-shard path above.
+                    _cleanup_old_shard_data(_dataset_out_dir(shard_id, ds_config))
                     logger.info(
                         f"Shard {shard_id} wrote 0 rows for dataset {ds_idx}; "
                         "no output folder will be created."

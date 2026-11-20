@@ -153,3 +153,56 @@ def test_dataset_dict_splits_with_different_columns_are_removed_per_split(
     assert len(saved["text_only"]) == 1
     for split in saved.values():
         assert sorted(split.column_names) == ["processed", "source"]
+
+
+def _save_stale_shard_output(tmp_path, shard_id: int) -> str:
+    """Write a previous run's shard output so a rerun has something to clear."""
+    out_dir = tmp_path / "output" / f"shard_{shard_id}"
+    Dataset.from_dict({"source": ["stale"], "processed": ["stale"]}).save_to_disk(
+        str(out_dir)
+    )
+    return str(out_dir)
+
+
+def test_empty_shard_clears_stale_output_from_a_previous_run(tmp_path, monkeypatch):
+    # The shard has no input rows this time, but an earlier run left output
+    # behind and the state directory is fresh, so the retry cleanup never runs.
+    # Without an explicit cleanup, `merge` would read those stale rows even
+    # though the shard reports rows_written: 0.
+    monkeypatch.setattr(shard_process, "MMIRAGEMapper", _ExplodingMapper)
+    config_path = _write_config(tmp_path, num_rows=1, num_shards=4, shard_id=3)
+    stale_dir = _save_stale_shard_output(tmp_path, 3)
+    monkeypatch.setattr(sys, "argv", ["shard_process", "--config", config_path])
+
+    shard_process.main()
+
+    with open(tmp_path / "state" / "shard_3" / "status.json") as f:
+        status = json.load(f)
+    assert status["status"] == "success"
+    assert status["stats"]["rows_written"] == 0
+    assert not os.path.exists(stale_dir)
+
+
+def test_zero_output_dataset_clears_stale_output_from_a_previous_run(
+    tmp_path, monkeypatch
+):
+    # Same hole on the other path: the shard has input rows but the map drops
+    # all of them, so no folder is written and an earlier run's output stays.
+    def _render_nothing(self, batch):
+        return {key: [] for key in self.output_schema}
+
+    monkeypatch.setattr(TemplateRenderer, "batch_render", _render_nothing)
+    config_path = _write_config(
+        tmp_path, num_rows=2, num_shards=1, shard_id=0, remove_columns=True
+    )
+    stale_dir = _save_stale_shard_output(tmp_path, 0)
+    monkeypatch.setattr(sys, "argv", ["shard_process", "--config", config_path])
+
+    shard_process.main()
+
+    with open(tmp_path / "state" / "shard_0" / "status.json") as f:
+        status = json.load(f)
+    assert status["status"] == "success"
+    assert status["stats"]["rows_processed"] == 2
+    assert status["stats"]["rows_written"] == 0
+    assert not os.path.exists(stale_dir)
