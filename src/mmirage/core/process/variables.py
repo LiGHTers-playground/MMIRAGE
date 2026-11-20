@@ -6,7 +6,7 @@ import abc
 import os
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, ClassVar, Dict, List, Literal, Optional
 
 import jmespath
 from PIL import Image
@@ -33,9 +33,15 @@ class BaseVar(abc.ABC):
 
     Attributes:
         name: Name of the variable.
+        available_at_map_time: Whether the value exists while the shard map
+            runs. False for variables that hold a placeholder until a later
+            stage (e.g. `mmirage merge`) fills them in. Declared here, not on
+            `OutputVar`, so that a step inspecting the variables declared
+            before it can read the flag off any of them, inputs included.
     """
 
     name: str = ""
+    available_at_map_time: ClassVar[bool] = True
 
 
 @dataclass

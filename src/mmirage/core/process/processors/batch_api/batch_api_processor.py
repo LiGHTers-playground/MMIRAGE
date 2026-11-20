@@ -79,6 +79,10 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
         )
         self._batch_request_counter = 0
         self._global_row_offset = 0
+        # Shard positions of the next batch's rows, set by begin_batch when the
+        # mapper knows them (with a filter step); otherwise every row of the
+        # shard reaches this output and _global_row_offset counts them.
+        self._batch_source_indices: Optional[List[int]] = None
         run_id = uuid.uuid4().hex[:6]
         export_prompts_path = self._resolve_export_prompts_path(
             export_prompts_dir,
@@ -182,6 +186,10 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
         return base_prompt, var_env.get_images()
 
     @override
+    def begin_batch(self, source_indices: List[int]) -> None:
+        """Record the shard positions of the next batch's rows."""
+        self._batch_source_indices = list(source_indices)
+
     def batch_process_sample(
         self,
         batch: List[VariableEnvironment],
@@ -197,6 +205,10 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
             The variable environments with a placeholder set for ``output_var``.
         """
         nb_samples = len(batch)
+        row_positions = self._batch_source_indices
+        self._batch_source_indices = None
+        if row_positions is None or len(row_positions) != nb_samples:
+            row_positions = [self._global_row_offset + i for i in range(nb_samples)]
         text_only_indices: List[int] = []
         multimodal_indices: List[int] = []
         index_to_custom_id: Dict[int, str] = {}
@@ -230,7 +242,7 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
                     config=self._batch_provider_config,
                 )
                 requests.append(request)
-                source_indices.append(self._global_row_offset + global_i)
+                source_indices.append(row_positions[global_i])
 
             self._text_orchestrator.add_requests(
                 requests=requests,
@@ -278,7 +290,7 @@ class BatchApiProcessor(BaseProcessor[BatchApiOutputVar]):
                     config=self._batch_provider_config,
                 )
                 requests.append(dict(request))
-                source_indices.append(self._global_row_offset + global_i)
+                source_indices.append(row_positions[global_i])
 
             self._multimodal_orchestrator.add_requests(
                 requests=requests,

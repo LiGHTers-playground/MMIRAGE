@@ -5,7 +5,8 @@ from typing import Any, Dict, List, Optional
 
 from mmirage.config.loading import LoadingParams
 from mmirage.core.process.base import BaseProcessorConfig
-from mmirage.core.process.variables import InputVar, OutputVar
+from mmirage.core.process.processors.filter.config import FilterStep
+from mmirage.core.process.variables import BaseVar, InputVar, OutputVar
 
 
 @dataclass
@@ -100,6 +101,62 @@ class ProcessingParams:
     output_schema: Dict[str, Any]
     remove_columns: bool = False
     cast_images: bool = True
+
+    def __post_init__(self) -> None:
+        # Outputs are ordered steps: each one may only read the inputs and the
+        # outputs declared before it. Fail at config load rather than in the shard.
+        context: List[BaseVar] = list(self.inputs)
+        for i, output_var in enumerate(self.outputs):
+            if not output_var.is_computable(context):
+                raise ValueError(self._uncomputable_message(i, output_var, context))
+            if isinstance(output_var, FilterStep):
+                # Batch requests are submitted before a later filter runs, and
+                # `mmirage merge` reads the receipts, not the filtered shard:
+                # the rows the filter drops would come back in the merge.
+                deferred = [v.name for v in context if not v.available_at_map_time]
+                if deferred:
+                    names = ", ".join(f"'{name}'" for name in deferred)
+                    raise ValueError(
+                        f"outputs[{i}] {self._filter_label(output_var)} comes after "
+                        f"the batch_api output {names}: the batch requests are "
+                        "submitted before it runs, so `mmirage merge` would bring "
+                        "back the rows it drops. Put the filter before the "
+                        "batch_api output."
+                    )
+            # A filter step declares no variable of its own.
+            if not isinstance(output_var, FilterStep):
+                context.append(output_var)
+
+    @staticmethod
+    def _filter_label(step: FilterStep) -> str:
+        # A filter step's `name` is unused and normally empty, so there is
+        # nothing worth quoting; say what the step is instead.
+        return f"'{step.name}'" if step.name else "(filter step)"
+
+    @staticmethod
+    def _uncomputable_message(
+        i: int, output_var: OutputVar, context: List[BaseVar]
+    ) -> str:
+        # A filter step is the only one that can name what it could not resolve.
+        if isinstance(output_var, FilterStep):
+            missing = output_var.missing_names(context)
+            if missing:
+                return (
+                    f"outputs[{i}] {ProcessingParams._filter_label(output_var)} "
+                    "references variables not "
+                    f"declared before it: {sorted(missing)}"
+                )
+            deferred = output_var.deferred_names(context)
+            if deferred:
+                names = ", ".join(f"'{v}'" for v in sorted(deferred))
+                return (
+                    f"outputs[{i}]: {names} is a batch_api output, "
+                    "only available after `mmirage merge`"
+                )
+        context_names = [v.name for v in context]
+        return (
+            f"outputs[{i}] '{output_var.name}' is not computable given {context_names}"
+        )
 
 
 @dataclass

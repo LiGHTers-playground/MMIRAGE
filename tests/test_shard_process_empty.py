@@ -78,6 +78,8 @@ def test_empty_shard_marks_success_without_loading_model(tmp_path, monkeypatch):
     assert status["status"] == "success"
     assert status["stats"]["rows_processed"] == 0
     assert status["stats"]["rows_written"] == 0
+    assert status["stats"]["rows_filtered"] == 0
+    assert status["stats"]["rows_dropped_by_error"] == 0
     assert not (tmp_path / "output" / "shard_3").exists()
 
 

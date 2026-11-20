@@ -89,6 +89,14 @@ class BaseProcessor(abc.ABC, Generic[C]):
         """
         raise NotImplementedError()
 
+    def begin_batch(self, source_indices: List[int]) -> None:
+        """Called before ``batch_process_sample`` when the rows' origin is known.
+
+        Args:
+            source_indices: For each row of the coming batch, its position in
+                the shard. Rows dropped by an earlier filter step leave gaps.
+        """
+
     def finalize(self) -> None:
         """Optional lifecycle hook; override when a processor buffers state."""
         pass

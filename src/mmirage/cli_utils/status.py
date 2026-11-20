@@ -180,8 +180,13 @@ def collect_bench_stats(cfg: MMirageConfig) -> Dict[str, Any]:
     per_shard: List[Dict[str, Any]] = []
 
     total_rows: int = 0
-    # Output-side row count; None until at least one shard reports the value.
-    total_rows_written: Optional[int] = None
+    # Output-side row counts, keyed by ShardStats field name; each stays None
+    # until at least one shard reports it.
+    total_row_counts: Dict[str, Optional[int]] = {
+        "rows_written": None,
+        "rows_filtered": None,
+        "rows_dropped_by_error": None,
+    }
     sum_runtime: float = 0.0
     runtimes: List[float] = []
     gpu_util_weighted: List[float] = []  # util * rows for weighted mean
@@ -210,8 +215,13 @@ def collect_bench_stats(cfg: MMirageConfig) -> Dict[str, Any]:
             runtimes.append(s.runtime_seconds)
         if s.rows_processed is not None:
             total_rows += s.rows_processed
-        if s.rows_written is not None:
-            total_rows_written = (total_rows_written or 0) + s.rows_written
+        for name, value in (
+            ("rows_written", s.rows_written),
+            ("rows_filtered", s.rows_filtered),
+            ("rows_dropped_by_error", s.rows_dropped_by_error),
+        ):
+            if value is not None:
+                total_row_counts[name] = (total_row_counts[name] or 0) + value
         if s.gpu_util_mean is not None and s.rows_processed:
             gpu_util_weighted.append(s.gpu_util_mean * s.rows_processed)
             gpu_total_rows_for_weight += s.rows_processed
@@ -287,7 +297,9 @@ def collect_bench_stats(cfg: MMirageConfig) -> Dict[str, Any]:
         "total_shards": num_shards,
         "completed_shards": sum(1 for e in per_shard if e.get("status") == "success"),
         "total_rows_processed": total_rows if total_rows > 0 else None,
-        "total_rows_written": total_rows_written,
+        "total_rows_written": total_row_counts["rows_written"],
+        "total_rows_filtered": total_row_counts["rows_filtered"],
+        "total_rows_dropped_by_error": total_row_counts["rows_dropped_by_error"],
         "wall_clock_runtime_seconds": wall_clock,
         "wall_clock_runtime_human": format_duration(wall_clock),
         "sum_shard_runtime_seconds": round(sum_runtime, 3) if runtimes else None,
