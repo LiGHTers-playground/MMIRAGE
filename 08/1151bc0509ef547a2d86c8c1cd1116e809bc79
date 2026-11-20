@@ -1,0 +1,21 @@
+src/mmirage/shard_process.py
+  s_95bd80318259cc::t_1b96d659570ae6 264-269,334-337
+tests/test_shard_process_empty.py
+  s_95bd80318259cc::t_de51eaaa087c6f 156-208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "081151bc0509ef547a2d86c8c1cd1116e809bc79",
+  "prompts": {},
+  "sessions": {
+    "s_95bd80318259cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e28c7984-853f-41a7-a213-7be3dc34e849",
+        "model": "claude-opus-5"
+      },
+      "human_author": "androz2091 <androz2091@gmail.com>"
+    }
+  }
+}
